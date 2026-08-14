@@ -1,0 +1,1019 @@
+<!DOCTYPE html>
+<html lang="id" class="antialiased">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Import Massal - Sistem Absensi">
+    <link rel="icon" type="image/png" href="../assets/img/favicon.png">
+    <title>Manajemen Data - Sistem Absensi</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.15.12/dist/cdn.min.js"></script>
+    <!-- SheetJS -->
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+
+    <script src="../shared/tailwind-config.js"></script>
+    <link rel="stylesheet" href="../shared/styles.css">
+    <script src="../shared/theme.js"></script>
+</head>
+
+<body
+    class="bg-surface-dim dark:bg-surface-dark-dim text-slate-900 dark:text-slate-200 transition-colors duration-300 min-h-screen"
+    x-data="adminImport()" x-init="initImport()">
+
+    <div class="flex h-screen overflow-hidden">
+
+        <!-- Sidebar (Desktop & Mobile) -->
+        <aside
+            class="fixed inset-y-0 left-0 z-50 w-64 glass shadow-[0_24px_40px_-12px_rgba(0,0,0,0.06)] dark:shadow-[0_24px_40px_-12px_rgba(0,0,0,0.3)] transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0"
+            :class="{'translate-x-0': sidebarOpen, '-translate-x-full': !sidebarOpen}">
+
+            <div class="flex items-center justify-between h-20 px-6 border-b border-slate-900/15 dark:border-white/15">
+                <div class="flex items-center gap-3">
+                    <div
+                        class="w-10 h-10 rounded-xl bg-gradient-to-tr from-primary to-primary text-white flex items-center justify-center shadow-lg shadow-primary/20">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                            stroke-width="2" class="w-6 h-6">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+                        </svg>
+                    </div>
+                    <span class="font-bold text-lg tracking-tight">AdminPanel</span>
+                </div>
+                <button @click="sidebarOpen = false" class="md:hidden text-slate-500 hover:text-primary">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
+                        stroke="currentColor" class="w-6 h-6">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <nav class="p-4 space-y-2 overflow-y-auto h-[calc(100vh-5rem)]">
+                <a href="admin_dashboard.html"
+                    class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                        stroke="currentColor" class="w-5 h-5">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
+                    </svg>
+                    <span class="font-medium">Dashboard</span>
+                </a>
+
+                <div class="pt-4 mt-4 border-t border-slate-900/15 dark:border-white/15">
+                    <p class="px-4 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Manajemen</p>
+                    <a href="admin_siswa.html"
+                        class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                            stroke="currentColor" class="w-5 h-5">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
+                        </svg>
+                        <span class="font-medium">Data Siswa</span>
+                    </a>
+                    <a href="admin_guru.html"
+                        class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                            stroke="currentColor" class="w-5 h-5">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M4.26 10.147a60.436 60.436 0 00-.491 6.347A48.627 48.627 0 0112 20.904a48.627 48.627 0 018.232-4.41 60.46 60.46 0 00-.491-6.347m-15.482 0a50.57 50.57 0 00-2.658-.813A59.905 59.905 0 0112 3.493a59.902 59.902 0 0110.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.697 50.697 0 0112 13.489a50.702 50.702 0 017.74-3.342M6.75 15a.75.75 0 100-1.5.75.75 0 000 1.5zm0 0v-3.675A55.378 55.378 0 0112 8.443m-7.007 11.55A5.981 5.981 0 006.75 15.75v-1.5" />
+                        </svg>
+                        <span class="font-medium">Data Guru</span>
+                    </a>
+                    <a href="admin_import.html"
+                        class="flex items-center gap-3 px-4 py-3 rounded-xl bg-primary text-white shadow-md shadow-primary/20 transition-all">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                            stroke="currentColor" class="w-5 h-5">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+                        </svg>
+                        <span class="font-medium">Manajemen Data</span>
+                    </a>
+                    <a href="admin_rekap.html"
+                        class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                            stroke="currentColor" class="w-5 h-5">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                        </svg>
+                        <span class="font-medium">Rekap Absensi</span>
+                    </a>
+                </div>
+            </nav>
+        </aside>
+
+        <div x-show="sidebarOpen" x-cloak class="fixed inset-0 z-40 bg-slate-900/50 backdrop-blur-sm md:hidden"
+            @click="sidebarOpen = false"></div>
+
+        <div class="flex-1 flex flex-col h-screen overflow-hidden">
+
+            <header class="h-20 glass flex items-center justify-between px-6 z-30">
+                <div class="flex items-center gap-4">
+                    <button @click="sidebarOpen = !sidebarOpen"
+                        class="md:hidden p-2 rounded-xl text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                            stroke="currentColor" class="w-6 h-6">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25H12" />
+                        </svg>
+                    </button>
+                    <h1 class="text-xl font-bold hidden sm:block font-serif">Manajemen Data</h1>
+                </div>
+
+                <div class="flex items-center gap-4">
+                    <button @click="toggleTheme()"
+                        class="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                        <svg x-show="!isDark" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                            stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />
+                        </svg>
+                        <svg x-show="isDark" style="display: none;" xmlns="http://www.w3.org/2000/svg" fill="none"
+                            viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"
+                            class="w-5 h-5 text-yellow-400">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />
+                        </svg>
+                    </button>
+
+                    <div class="relative" x-data="{ open: false }">
+                        <button @click="open = !open" @click.away="open = false"
+                            class="flex items-center gap-3 p-1.5 rounded-full hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                            <div
+                                class="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center">
+                                <span class="material-symbols-rounded text-xl">admin_panel_settings</span>
+                            </div>
+                        </button>
+
+                        <div x-show="open" x-cloak
+                            class="absolute right-0 mt-2 w-48 bg-surface-lowest dark:bg-surface-dark-lowest rounded-2xl shadow-[0_24px_40px_-12px_rgba(0,0,0,0.06)] dark:shadow-[0_24px_40px_-12px_rgba(0,0,0,0.3)] py-2 z-50">
+                            <div class="px-4 py-2 border-b border-slate-900/15 dark:border-white/15 mb-1">
+                                <p class="text-sm font-medium">Administrator</p>
+                                <p class="text-xs text-slate-500">Super Admin</p>
+                            </div>
+                            <button @click="window.location.href='admin_dashboard.html'"
+                                class="w-full flex items-center gap-2 text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                                <span class="material-symbols-rounded text-lg">password</span> Ubah Sandi
+                            </button>
+                            <button @click="logout()"
+                                class="w-full flex items-center gap-2 text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors border-t border-slate-900/15 dark:border-white/15">
+                                <span class="material-symbols-rounded text-lg">logout</span>
+                                Keluar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <main class="flex-1 overflow-y-auto p-6">
+                <div class="max-w-4xl mx-auto space-y-6">
+                    <!-- Mode Tabs -->
+                    <div
+                        class="bg-surface-lowest dark:bg-surface-dark-lowest rounded-3xl p-2 shadow-lg shadow-slate-200/30 dark:shadow-black/20 flex gap-2">
+                        <button @click="inputMode = 'import'"
+                            :class="inputMode === 'import' ? 'bg-primary text-white shadow-md' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'"
+                            class="flex-1 py-3 rounded-2xl font-medium text-sm transition-all flex items-center justify-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                                stroke="currentColor" class="w-5 h-5">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+                            </svg>
+                            Import Excel
+                        </button>
+                        <button @click="inputMode = 'manual'"
+                            :class="inputMode === 'manual' ? 'bg-primary text-white shadow-md' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'"
+                            class="flex-1 py-3 rounded-2xl font-medium text-sm transition-all flex items-center justify-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                                stroke="currentColor" class="w-5 h-5">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" />
+                            </svg>
+                            Input Manual
+                        </button>
+                    </div>
+
+                    <!-- ============ IMPORT EXCEL MODE ============ -->
+                    <div x-show="inputMode === 'import'">
+
+                        <!-- Form Card -->
+                        <div
+                            class="bg-surface-lowest dark:bg-surface-dark-lowest rounded-3xl p-8 shadow-lg shadow-slate-200/30 dark:shadow-black/20">
+                            <h2 class="text-xl font-bold font-serif mb-6">Upload Data Excel / CSV</h2>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <!-- Left: Options -->
+                                <div class="space-y-6">
+                                    <div>
+                                        <label class="block text-sm font-medium mb-2">Tipe Data</label>
+                                        <div class="grid grid-cols-3 gap-3">
+                                            <button @click="importType = 'siswa'"
+                                                :class="{'bg-primary text-white border-primary': importType === 'siswa', 'bg-transparent border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-primary': importType !== 'siswa'}"
+                                                class="py-3 px-4 rounded-xl border transition-all text-sm font-medium text-center">
+                                                Siswa
+                                            </button>
+                                            <button @click="importType = 'guru'"
+                                                :class="{'bg-primary text-white border-primary': importType === 'guru', 'bg-transparent border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-primary': importType !== 'guru'}"
+                                                class="py-3 px-4 rounded-xl border transition-all text-sm font-medium text-center">
+                                                Guru
+                                            </button>
+                                            <button @click="importType = 'mapel'"
+                                                :class="{'bg-primary text-white border-primary': importType === 'mapel', 'bg-transparent border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-primary': importType !== 'mapel'}"
+                                                class="py-3 px-4 rounded-xl border transition-all text-sm font-medium text-center">
+                                                Mapel
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-sm font-medium mb-2">Langkah 1: Download
+                                            Template</label>
+                                        <p class="text-xs text-slate-500 mb-3">Gunakan template ini untuk mengisi data
+                                            agar
+                                            sesuai dengan format sistem.</p>
+                                        <button @click="downloadTemplate()"
+                                            class="flex items-center justify-center gap-2 w-full py-3 px-4 bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400 font-semibold rounded-xl transition-all hover:bg-emerald-100 dark:hover:bg-emerald-900/50">
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                                stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                                                <path stroke-linecap="round" stroke-linejoin="round"
+                                                    d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                                            </svg>
+                                            Download Template <span
+                                                x-text="importType === 'siswa' ? 'Siswa' : (importType === 'guru' ? 'Guru' : 'Mapel')"></span>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Right: Upload Area -->
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">Langkah 2: Upload File</label>
+                                    <p class="text-xs text-slate-500 mb-3">Pastikan file berisi maksimal 500 baris untuk
+                                        satu kali upload.</p>
+
+                                    <div class="relative border-2 border-dashed rounded-2xl p-8 text-center transition-colors"
+                                        :class="{'border-primary bg-primary/5': isDragging, 'border-slate-300 dark:border-slate-700 hover:border-primary/50': !isDragging}"
+                                        @dragover.prevent="isDragging = true" @dragleave.prevent="isDragging = false"
+                                        @drop.prevent="handleDrop($event)">
+
+                                        <input type="file" id="fileUpload"
+                                            class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                            accept=".xlsx, .xls, .csv" @change="handleFileSelect($event)"
+                                            :disabled="isProcessing">
+
+                                        <div class="pointer-events-none">
+                                            <div
+                                                class="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mx-auto mb-3 text-slate-500">
+                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                                    stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m6.75 12l-3-3m0 0l-3 3m3-3v6m-1.5-15H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                                                </svg>
+                                            </div>
+                                            <p class="text-sm font-medium" x-show="!fileName">Klik atau tarik file ke
+                                                sini
+                                            </p>
+                                            <p class="text-sm font-medium text-primary" x-show="fileName"
+                                                x-text="fileName">
+                                            </p>
+                                            <p class="text-xs text-slate-500 mt-1">Mendukung .xlsx, .xls, .csv</p>
+                                        </div>
+                                    </div>
+
+                                    <button @click="processFile()" :disabled="!file || isProcessing"
+                                        class="mt-4 w-full py-3 px-4 bg-primary text-white font-semibold rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2">
+                                        <span x-show="!isProcessing">Mulai Import Data</span>
+                                        <span x-show="isProcessing" class="flex items-center gap-2">
+                                            <svg class="animate-spin h-5 w-5 text-white"
+                                                xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                                    stroke-width="4"></circle>
+                                                <path class="opacity-75" fill="currentColor"
+                                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                                                </path>
+                                            </svg>
+                                            Memproses...
+                                        </span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Progress & Result Card -->
+                    <div x-show="inputMode === 'import' && (isProcessing || progress.total > 0)" x-cloak
+                        class="bg-surface-lowest dark:bg-surface-dark-lowest rounded-3xl p-8 shadow-lg shadow-slate-200/30 dark:shadow-black/20">
+                        <div class="mb-4 flex justify-between items-end">
+                            <div>
+                                <h3 class="font-bold text-lg">Status Import</h3>
+                                <p class="text-sm text-slate-500" x-text="statusText"></p>
+                            </div>
+                            <div class="text-2xl font-bold font-serif text-primary">
+                                <span x-text="Math.round((progress.current / progress.total) * 100) || 0"></span>%
+                            </div>
+                        </div>
+
+                        <div class="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-3mb-6 overflow-hidden h-3">
+                            <div class="bg-primary h-3 rounded-full transition-all duration-300"
+                                :style="`width: ${(progress.current / progress.total) * 100 || 0}%`"></div>
+                        </div>
+
+                        <div class="mt-6 flex flex-wrap gap-4" x-show="!isProcessing && progress.total > 0">
+                            <div
+                                class="flex-1 bg-green-50 dark:bg-green-900/20 p-4 rounded-xl border border-green-100 dark:border-green-800/50">
+                                <div class="text-sm text-green-600 dark:text-green-400 font-medium">Berhasil</div>
+                                <div class="text-xl font-bold text-green-700 dark:text-green-300"
+                                    x-text="progress.success"></div>
+                            </div>
+                            <div
+                                class="flex-1 bg-red-50 dark:bg-red-900/20 p-4 rounded-xl border border-red-100 dark:border-red-800/50">
+                                <div class="text-sm text-red-600 dark:text-red-400 font-medium">Gagal</div>
+                                <div class="text-xl font-bold text-red-700 dark:text-red-300" x-text="progress.failed">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Failed Items List -->
+                        <div class="mt-6 border-t border-slate-900/15 dark:border-white/15 pt-6"
+                            x-show="!isProcessing && failedItems.length > 0">
+                            <h4 class="font-semibold text-red-600 dark:text-red-400 mb-2">Detail Data Gagal / Lewati
+                            </h4>
+                            <div
+                                class="bg-red-50 dark:bg-red-900/10 rounded-xl p-4 border border-red-100 dark:border-red-900/30 max-h-60 overflow-y-auto space-y-2">
+                                <template x-for="item in failedItems">
+                                    <div class="text-xs flex items-start gap-2 text-red-700 dark:text-red-300">
+                                        <span class="font-bold">•</span>
+                                        <div>
+                                            <span class="font-semibold" x-text="item.name"></span>:
+                                            <span x-text="item.error"></span>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+
+                        <div class="mt-6 border-t border-slate-900/15 dark:border-white/15 pt-6"
+                            x-show="!isProcessing && exportedAccounts.length > 0 && importType !== 'mapel' && importType !== 'siswa'">
+                            <h4 class="font-medium mb-2">Selesai!</h4>
+                            <p class="text-sm text-slate-500 mb-4">Proses import selesai. Anda dapat mendownload daftar
+                                akun (beserta password) yang berhasil dibuat di bawah ini.</p>
+                            <button @click="downloadExportedAccounts()"
+                                class="flex items-center justify-center gap-2 w-full sm:w-auto py-3 px-6 bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 font-semibold rounded-xl transition-all hover:bg-blue-100 dark:hover:bg-blue-900/50">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                    stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m.75 12l3 3m0 0l3-3m-3 3v-6m-1.5-9H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                                </svg>
+                                Download Daftar Akun
+                            </button>
+                        </div>
+                    </div> <!-- end import mode -->
+
+                    <!-- ============ MANUAL INPUT MODE ============ -->
+                    <div x-show="inputMode === 'manual'" style="display: none;">
+                        <div
+                            class="bg-surface-lowest dark:bg-surface-dark-lowest rounded-3xl p-8 shadow-lg shadow-slate-200/30 dark:shadow-black/20">
+                            <h2 class="text-xl font-bold font-serif mb-6">Input Data Manual</h2>
+
+                            <!-- Tipe Selector -->
+                            <div class="mb-6">
+                                <label class="block text-sm font-medium mb-2">Tipe Data</label>
+                                <div class="grid grid-cols-4 gap-3">
+                                    <button @click="manualType = 'siswa'"
+                                        :class="manualType === 'siswa' ? 'bg-primary text-white border-primary' : 'border-slate-300 dark:border-slate-700 hover:border-primary'"
+                                        class="py-3 px-4 rounded-xl border transition-all text-sm font-medium text-center">Siswa</button>
+                                    <button @click="manualType = 'guru'"
+                                        :class="manualType === 'guru' ? 'bg-primary text-white border-primary' : 'border-slate-300 dark:border-slate-700 hover:border-primary'"
+                                        class="py-3 px-4 rounded-xl border transition-all text-sm font-medium text-center">Guru</button>
+                                    <button @click="manualType = 'operator'"
+                                        :class="manualType === 'operator' ? 'bg-primary text-white border-primary' : 'border-slate-300 dark:border-slate-700 hover:border-primary'"
+                                        class="py-3 px-4 rounded-xl border transition-all text-sm font-medium text-center">Operator</button>
+                                    <button @click="manualType = 'mapel'"
+                                        :class="manualType === 'mapel' ? 'bg-primary text-white border-primary' : 'border-slate-300 dark:border-slate-700 hover:border-primary'"
+                                        class="py-3 px-4 rounded-xl border transition-all text-sm font-medium text-center">Mapel</button>
+                                </div>
+                            </div>
+
+                            <!-- Form Siswa -->
+                            <div x-show="manualType === 'siswa'" x-transition class="space-y-4">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div><label class="block text-sm font-medium mb-1">Nama Lengkap <span
+                                                class="text-red-500">*</span></label><input type="text"
+                                            x-model="manualForm.nama_lengkap"
+                                            class="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                                            placeholder="Nama lengkap siswa"></div>
+                                    <div><label class="block text-sm font-medium mb-1">Kelas</label>
+                                        <select x-model="manualForm.kelas"
+                                            class="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all">
+                                            <option value="">-- Pilih --</option>
+                                            <option value="10">10</option>
+                                            <option value="11">11</option>
+                                            <option value="12">12</option>
+                                        </select>
+                                    </div>
+                                    <div><label class="block text-sm font-medium mb-1">Jurusan</label>
+                                        <select x-model="manualForm.jurusan"
+                                            class="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all">
+                                            <option value="">-- Pilih --</option>
+                                            <option value="TKJ">TKJ</option>
+                                            <option value="TPM">TPM</option>
+                                            <option value="TSM 1">TSM 1</option>
+                                            <option value="TSM 2">TSM 2</option>
+                                            <option value="DPB">DPB</option>
+                                            <option value="TKR">TKR</option>
+                                            <option value="DKV">DKV</option>
+                                        </select>
+                                    </div>
+                                    <div><label class="block text-sm font-medium mb-1">Jenis Kelamin</label>
+                                        <select x-model="manualForm.jenis_kelamin"
+                                            class="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all">
+                                            <option value="">-- Pilih --</option>
+                                            <option value="Laki-laki">Laki-laki</option>
+                                            <option value="Perempuan">Perempuan</option>
+                                        </select>
+                                    </div>
+                                    <div><label class="block text-sm font-medium mb-1">No HP Orang Tua</label><input
+                                            type="text" x-model="manualForm.no_hp_ortu"
+                                            class="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                                            placeholder="08xxxx"></div>
+                                </div>
+                            </div>
+
+                            <!-- Form Guru -->
+                            <div x-show="manualType === 'guru'" x-transition class="space-y-4">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div><label class="block text-sm font-medium mb-1">Nama Lengkap <span
+                                                class="text-red-500">*</span></label><input type="text"
+                                            x-model="manualForm.nama_lengkap"
+                                            class="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                                            placeholder="Nama lengkap guru"></div>
+                                    <div><label class="block text-sm font-medium mb-1">Nama Panggilan <span
+                                                class="text-red-500">*</span></label><input type="text"
+                                            x-model="manualForm.nama_panggilan"
+                                            class="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                                            placeholder="Digunakan sebagai username login"></div>
+                                    <div><label class="block text-sm font-medium mb-1">Jenis Kelamin</label>
+                                        <select x-model="manualForm.jenis_kelamin"
+                                            class="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all">
+                                            <option value="">-- Pilih --</option>
+                                            <option value="Laki-laki">Laki-laki</option>
+                                            <option value="Perempuan">Perempuan</option>
+                                        </select>
+                                    </div>
+                                    <div><label class="block text-sm font-medium mb-1">Password</label><input
+                                            type="text" x-model="manualForm.password"
+                                            class="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                                            placeholder="Silahkan diisi, atau kosongkan untuk auto-generate"></div>
+                                </div>
+                            </div>
+
+                            <!-- Form Operator -->
+                            <div x-show="manualType === 'operator'" x-transition class="space-y-4">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div><label class="block text-sm font-medium mb-1">Nama Lengkap <span
+                                                class="text-red-500">*</span></label><input type="text"
+                                            x-model="manualForm.nama_lengkap"
+                                            class="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                                            placeholder="Nama lengkap operator"></div>
+                                    <div><label class="block text-sm font-medium mb-1">Username <span
+                                                class="text-red-500">*</span></label><input type="text"
+                                            x-model="manualForm.nama_panggilan"
+                                            class="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                                            placeholder="Digunakan untuk login"></div>
+                                    <div><label class="block text-sm font-medium mb-1">Password</label><input
+                                            type="text" x-model="manualForm.password"
+                                            class="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                                            placeholder="Silahkan diisi, atau kosongkan untuk auto-generate"></div>
+                                </div>
+                            </div>
+
+                            <!-- Form Mapel -->
+                            <div x-show="manualType === 'mapel'" x-transition class="space-y-4">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div><label class="block text-sm font-medium mb-1">Nama Mapel <span
+                                                class="text-red-500">*</span></label><input type="text"
+                                            x-model="manualForm.nama_mapel"
+                                            class="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                                            placeholder="Contoh: Matematika"></div>
+                                    <div><label class="block text-sm font-medium mb-1">Kelas
+                                            <select x-model="manualForm.kelas"
+                                                class="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all">
+                                                <option value="">-- Pilih --</option>
+                                                <option value="10">10</option>
+                                                <option value="11">11</option>
+                                                <option value="12">12</option>
+                                            </select></div>
+                                    <div><label class="block text-sm font-medium mb-1">Jurusan</label><input type="text"
+                                            x-model="manualForm.jurusan"
+                                            class="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                                            placeholder="Contoh: RPL"></div>
+                                </div>
+                            </div>
+
+                            <!-- Status Message -->
+                            <div class="mt-4 flex flex-col items-center gap-2">
+                                <p x-show="manualMsg" x-text="manualMsg"
+                                    class="w-full text-sm font-medium text-center py-2 rounded-xl"
+                                    :class="manualMsg.startsWith('✅') ? 'text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20' : (manualMsg.startsWith('⚠') ? 'text-amber-600 bg-amber-50 dark:bg-amber-900/20' : 'text-rose-600 bg-rose-50 dark:bg-rose-900/20')">
+                                </p>
+
+                                <button x-show="manualSuccessData && manualSuccessData.type !== 'mapel' && manualSuccessData.type !== 'siswa'"
+                                    @click="downloadManualAccount()"
+                                    class="px-4 py-2 bg-slate-800 dark:bg-slate-700 text-white text-xs font-medium rounded-lg flex items-center gap-2 hover:bg-slate-700 transition-colors">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                        stroke-width="2" stroke="currentColor" class="w-4 h-4">
+                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                            d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                                    </svg>
+                                    Download Akun (.txt)
+                                </button>
+                            </div>
+
+                            <!-- Submit Button -->
+                            <button @click="submitManualForm()" :disabled="manualProcessing"
+                                class="mt-6 w-full py-3 bg-primary hover:bg-blue-700 text-white font-semibold rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+                                <span x-show="!manualProcessing">Simpan Data</span>
+                                <span x-show="manualProcessing" class="flex items-center gap-2"><svg
+                                        class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg"
+                                        fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                            stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor"
+                                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                                        </path>
+                                    </svg> Menyimpan...</span>
+                            </button>
+                        </div>
+                    </div> <!-- end manual mode -->
+
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Firebase Script -->
+    <script type="module">
+        import { app, db } from '../firebase-config.js';
+        import { getAuth, signOut, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.7.1/firebase-auth.js";
+        import { doc, setDoc, getDoc, collection, query, where, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/11.7.1/firebase-firestore.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.7.1/firebase-app.js";
+
+        const auth = getAuth(app);
+
+        // --- SECONDARY APP LOGIC ---
+        // Kita butuh config dari app utama untuk secondary app.
+        // Karena config tidak diexport langsung, kita ambil options dari app utama.
+        const secondaryApp = initializeApp(app.options, "Secondary");
+        const secondaryAuth = getAuth(secondaryApp);
+
+        window.firebaseAdminReady = function () {
+            window.dispatchEvent(new CustomEvent('firebase-admin-ready', { detail: { nama: localStorage.getItem('user_name') || 'Admin' } }));
+        };
+
+        window.firebaseLogout = async function () {
+            await signOut(auth);
+            localStorage.clear();
+            window.location.href = '../index.html';
+        };
+
+        // Fungsi import worker
+        window.processImportItem = async function (item, type) {
+            try {
+                if (type === 'mapel') {
+                    const namaMapel = item['Nama Mapel'] ? item['Nama Mapel'].toString().trim() : '';
+                    if (!namaMapel) throw new Error("Nama Mapel kosong");
+
+                    const kelas = item['Kelas'] ? item['Kelas'].toString().trim() : '';
+                    const jurusan = item['Jurusan'] ? item['Jurusan'].toString().trim() : '';
+
+                    const cleanMapel = namaMapel.toLowerCase().replace(/[^a-z0-9]/g, '_');
+                    const cleanKelas = kelas.toLowerCase().replace(/[^a-z0-9]/g, '_');
+                    const cleanJurusan = jurusan.toLowerCase().replace(/[^a-z0-9]/g, '_');
+                    const docId = `${cleanMapel}_${cleanKelas}_${cleanJurusan}`;
+
+                    // Cek jika mapel untuk kelas dan jurusan tersebut sudah ada
+                    const docSnap = await getDoc(doc(db, 'mapel', docId));
+                    if (docSnap.exists()) {
+                        throw new Error(`Mata pelajaran '${namaMapel}' untuk kelas ${kelas} jurusan ${jurusan} sudah terdaftar.`);
+                    }
+
+                    await setDoc(doc(db, 'mapel', docId), {
+                        nama: namaMapel,
+                        kelas: kelas,
+                        jurusan: jurusan,
+                        created_at: new Date()
+                    });
+
+                    return { success: true, username: namaMapel, password: '-', email: `${kelas}/${jurusan}` };
+                }
+
+                const namaLengkapRaw = item['Nama Lengkap'] ? item['Nama Lengkap'].toString().trim() : '';
+                if (!namaLengkapRaw) throw new Error("Nama Lengkap kosong");
+
+                let usernameRaw = '';
+                let cleanUsername = '';
+                let email, password, uid;
+                let existingFirestoreDoc = null;
+
+                if (type !== 'siswa') {
+                    usernameRaw = item['Nama Panggilan'] ? item['Nama Panggilan'].toString().trim() : '';
+                    cleanUsername = usernameRaw.toLowerCase().replace(/[^a-z0-9]/g, '');
+                    if (!cleanUsername) throw new Error("Nama Panggilan kosong");
+                }
+
+                if (type === 'siswa') {
+                    // Cek apakah siswa dengan nama_lengkap sudah ada di Firestore
+                    const qSiswaNama = query(collection(db, 'siswa'), where('nama_lengkap', '==', namaLengkapRaw));
+                    const snapSiswaNama = await getDocs(qSiswaNama);
+                    if (!snapSiswaNama.empty) {
+                        existingFirestoreDoc = snapSiswaNama.docs[0];
+                    }
+                    uid = existingFirestoreDoc ? existingFirestoreDoc.id : doc(collection(db, 'siswa')).id;
+                    
+                    // Kita tidak generate email dan password untuk siswa
+                    email = '';
+                    password = '';
+                } else if (type === 'guru' || type === 'operator') {
+                    const domain = type === 'operator' ? 'operator' : 'guru';
+                    email = `${cleanUsername}@${domain}.absensi.id`;
+                    password = item['Password'] ? item['Password'].toString().trim() : `${domain}${Math.floor(1000 + Math.random() * 9000)}`;
+
+                    // Cek apakah guru/operator dengan nama panggilan/lengkap sudah ada di Firestore
+                    const qGuru = query(collection(db, 'users'), where('username', '==', usernameRaw));
+                    const snapGuru = await getDocs(qGuru);
+                    if (!snapGuru.empty) {
+                        existingFirestoreDoc = snapGuru.docs[0];
+                    } else {
+                        const qGuruNama = query(collection(db, 'users'), where('nama', '==', namaLengkapRaw));
+                        const snapGuruNama = await getDocs(qGuruNama);
+                        if (!snapGuruNama.empty) {
+                            existingFirestoreDoc = snapGuruNama.docs[0];
+                        }
+                    }
+                }
+
+                // 2. Kelola Akun Auth menggunakan SECONDARY APP (agar tidak mengganggu sesi admin)
+                let cred;
+                if (type !== 'siswa') {
+                    try {
+                        cred = await createUserWithEmailAndPassword(secondaryAuth, email, password);
+                        uid = cred.user.uid;
+                        await signOut(secondaryAuth);
+                    } catch (authError) {
+                        if (authError.code === 'auth/email-already-in-use') {
+                            // Email Auth sudah ada! Lakukan sign-in sementara untuk mendapatkan UID pengguna asli
+                            try {
+                                const signInCred = await signInWithEmailAndPassword(secondaryAuth, email, password);
+                                uid = signInCred.user.uid;
+                                await signOut(secondaryAuth);
+                            } catch (signInError) {
+                                // Password berbeda atau kegagalan lainnya
+                                throw new Error(`Email Auth '${email}' sudah digunakan/terdaftar dengan password berbeda.`);
+                            }
+                        } else {
+                            throw authError;
+                        }
+                    }
+                }
+
+                // 3. Evaluasi dan Rekonsiliasi Status Firestore vs Auth
+                let profileData = {};
+                if (existingFirestoreDoc) {
+                    if (existingFirestoreDoc.id === uid) {
+                        // Data sinkron di kedua tempat, lewati proses (skip)
+                        throw new Error(`Data '${namaLengkapRaw}' sudah terdaftar lengkap di database & auth.`);
+                    } else {
+                        // Terjadi desinkronisasi UID! Ambil data lama agar tidak kehilangan field penting (seperti nisn, rfid, dll)
+                        profileData = existingFirestoreDoc.data();
+                        // Hapus dokumen Firestore lama yang desinkron
+                        await deleteDoc(doc(db, type === 'siswa' ? 'siswa' : 'users', existingFirestoreDoc.id));
+                    }
+                }
+
+                // 4. Simpan Profil ke Firestore menggunakan db utama dengan UID yang sinkron
+                if (type === 'siswa') {
+                    await setDoc(doc(db, 'siswa', uid), {
+                        ...profileData, // Melindungi data lama (nisn, rfid, dll)
+                        nama_lengkap: namaLengkapRaw || profileData.nama_lengkap,
+                        kelas: (item['Kelas'] ? item['Kelas'].toString() : '') || profileData.kelas || '',
+                        jurusan: (item['Jurusan'] ? item['Jurusan'].toString() : '') || profileData.jurusan || '',
+                        jenis_kelamin: item['Jenis Kelamin'] || profileData.jenis_kelamin || '',
+                        no_hp_ortu: item['No HP Ortu'] || profileData.no_hp_ortu || '',
+                        created_at: profileData.created_at || new Date(),
+                        updated_at: new Date()
+                    });
+                } else {
+                    await setDoc(doc(db, 'users', uid), {
+                        ...profileData,
+                        nama: namaLengkapRaw || profileData.nama,
+                        username: usernameRaw || profileData.username,
+                        jenis_kelamin: item['Jenis Kelamin'] || profileData.jenis_kelamin || '',
+                        no_hp: item['No HP'] || profileData.no_hp || '',
+                        role: type === 'operator' ? 'operator' : 'guru',
+                        created_at: profileData.created_at || new Date(),
+                        updated_at: new Date()
+                    });
+                }
+
+                return { success: true, username: usernameRaw, password: password, email: email };
+            } catch (error) {
+                console.error("Gagal memproses", item, error);
+                return { success: false, error: error.message };
+            }
+        };
+
+        window.firebaseAdminReady();
+    </script>
+
+    <script>
+        function adminImport() {
+            return {
+                isDark: false,
+                sidebarOpen: window.innerWidth >= 768,
+                userName: '',
+                inputMode: 'import', // 'import' or 'manual'
+                importType: 'siswa', // 'siswa' atau 'guru'
+                isDragging: false,
+                file: null,
+                fileName: '',
+                isProcessing: false,
+                statusText: 'Menunggu file...',
+                progress: { current: 0, total: 0, success: 0, failed: 0 },
+                exportedAccounts: [],
+                failedItems: [],
+
+                // Manual Form
+                manualType: 'siswa',
+                manualForm: {},
+                manualMsg: '',
+                manualProcessing: false,
+
+                initImport() {
+                    this.userName = localStorage.getItem('user_name') || 'Admin';
+                    ThemeUtil.init(this);
+                    window.addEventListener('firebase-admin-ready', (e) => {
+                        this.userName = e.detail.nama || 'Admin';
+                    });
+                },
+
+                toggleTheme() {
+                    ThemeUtil.toggle(this);
+                },
+
+                logout() {
+                    if (window.firebaseLogout) window.firebaseLogout();
+                },
+
+                downloadTemplate() {
+                    let wsData;
+                    if (this.importType === 'siswa') {
+                        wsData = [["Nama Lengkap", "Kelas", "Jurusan", "Jenis Kelamin", "No HP Ortu"]];
+                    } else if (this.importType === 'guru') {
+                        wsData = [["Nama Lengkap", "Nama Panggilan", "Jenis Kelamin", "Password"]];
+                    } else if (this.importType === 'mapel') {
+                        wsData = [["Nama Mapel", "Kelas", "Jurusan"]];
+                    }
+
+                    const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+                    // Set kolom width
+                    if (this.importType === 'mapel') {
+                        ws['!cols'] = [{ wch: 25 }, { wch: 15 }, { wch: 20 }];
+                    } else if (this.importType === 'guru') {
+                        ws['!cols'] = [{ wch: 25 }, { wch: 15 }, { wch: 15 }, { wch: 15 }];
+                    } else {
+                        ws['!cols'] = [{ wch: 25 }, { wch: 15 }, { wch: 15 }, { wch: 10 }, { wch: 15 }];
+                    }
+
+                    const wb = XLSX.utils.book_new();
+                    XLSX.utils.book_append_sheet(wb, ws, "Template");
+                    XLSX.writeFile(wb, `Template_Import_${this.importType.charAt(0).toUpperCase() + this.importType.slice(1)}.xlsx`);
+                },
+
+                handleDrop(e) {
+                    this.isDragging = false;
+                    if (e.dataTransfer.files.length > 0) {
+                        this.file = e.dataTransfer.files[0];
+                        this.fileName = this.file.name;
+                    }
+                },
+
+                handleFileSelect(e) {
+                    if (e.target.files.length > 0) {
+                        this.file = e.target.files[0];
+                        this.fileName = this.file.name;
+                    }
+                },
+
+                async processFile() {
+                    if (!this.file) return;
+                    this.isProcessing = true;
+                    this.statusText = "Membaca file Excel...";
+                    this.progress = { current: 0, total: 0, success: 0, failed: 0 };
+                    this.exportedAccounts = [];
+                    this.failedItems = [];
+
+                    const reader = new FileReader();
+                    reader.onload = async (e) => {
+                        try {
+                            const data = new Uint8Array(e.target.result);
+                            const workbook = XLSX.read(data, { type: 'array' });
+                            const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                            const jsonData = XLSX.utils.sheet_to_json(firstSheet);
+
+                            if (jsonData.length === 0) {
+                                alert("File Excel kosong!");
+                                this.isProcessing = false;
+                                return;
+                            }
+
+                            this.progress.total = jsonData.length;
+                            this.statusText = `Memproses 0 dari ${this.progress.total} data...`;
+
+                            // Looping dengan jeda untuk rate limit (tiap 10 akun)
+                            const uniqueJurusan = new Set();
+                            for (let i = 0; i < jsonData.length; i++) {
+                                // Update status
+                                this.statusText = `Memproses data ke-${i + 1} dari ${this.progress.total}...`;
+
+                                const result = await window.processImportItem(jsonData[i], this.importType);
+
+                                if (result.success) {
+                                    this.progress.success++;
+                                    if (this.importType === 'mapel') {
+                                        this.exportedAccounts.push({
+                                            'Nama Mapel': jsonData[i]['Nama Mapel'] || '',
+                                            'Kelas': jsonData[i]['Kelas'] || '',
+                                            'Jurusan': jsonData[i]['Jurusan'] || ''
+                                        });
+                                    } else {
+                                        this.exportedAccounts.push({
+                                            'Nama Lengkap': jsonData[i]['Nama Lengkap'] || '',
+                                            'Username (Login)': result.email, // bisa nampilkan email atau username bersih
+                                            'Username/Panggilan': result.username,
+                                            'Password': result.password
+                                        });
+                                    }
+                                    if ((this.importType === 'siswa' || this.importType === 'mapel') && jsonData[i]['Jurusan']) {
+                                        uniqueJurusan.add(jsonData[i]['Jurusan'].toString().trim());
+                                    }
+                                } else {
+                                    this.progress.failed++;
+                                    const failName = jsonData[i]['Nama Lengkap'] || jsonData[i]['Nama Mapel'] || `Baris ${i + 1}`;
+                                    this.failedItems.push({
+                                        name: failName,
+                                        error: result.error || 'Kesalahan tidak diketahui'
+                                    });
+                                }
+
+                                this.progress.current++;
+
+                                // Delay tiap 10 akun (untuk siswa/guru yang pakai Auth)
+                                if (this.importType !== 'mapel' && (i + 1) % 10 === 0 && (i + 1) < jsonData.length) {
+                                    this.statusText = `Jeda 3 detik untuk mencegah limit sistem...`;
+                                    await new Promise(r => setTimeout(r, 3000));
+                                } else {
+                                    // Delay kecil agar UI update
+                                    await new Promise(r => setTimeout(r, 100));
+                                }
+                            }
+
+                            // Save unique jurusan
+                            if ((this.importType === 'siswa' || this.importType === 'mapel') && uniqueJurusan.size > 0) {
+                                this.statusText = `Menyimpan data jurusan...`;
+                                const { doc, setDoc } = await import("https://www.gstatic.com/firebasejs/11.7.1/firebase-firestore.js");
+                                const { db } = await import('../firebase-config.js');
+                                for (const jurusanName of uniqueJurusan) {
+                                    if (jurusanName) {
+                                        const cleanId = jurusanName.toLowerCase().replace(/[^a-z0-9]/g, '_');
+                                        try {
+                                            await setDoc(doc(db, 'jurusan', cleanId), {
+                                                nama: jurusanName
+                                            });
+                                        } catch (e) {
+                                            console.error("Gagal simpan jurusan:", e);
+                                        }
+                                    }
+                                }
+                            }
+
+                            this.statusText = "Selesai memproses semua data!";
+                        } catch (err) {
+                            console.error(err);
+                            alert("Terjadi kesalahan saat membaca file.");
+                        } finally {
+                            this.isProcessing = false;
+                        }
+                    };
+                    reader.readAsArrayBuffer(this.file);
+                },
+
+                downloadExportedAccounts() {
+                    if (this.exportedAccounts.length === 0) return;
+                    const ws = XLSX.utils.json_to_sheet(this.exportedAccounts);
+                    const wb = XLSX.utils.book_new();
+                    if (this.importType === 'mapel') {
+                        ws['!cols'] = [{ wch: 25 }, { wch: 15 }, { wch: 20 }];
+                        XLSX.utils.book_append_sheet(wb, ws, "Mapel");
+                    } else {
+                        ws['!cols'] = [{ wch: 25 }, { wch: 30 }, { wch: 20 }, { wch: 15 }];
+                        XLSX.utils.book_append_sheet(wb, ws, "Akun");
+                    }
+                    XLSX.writeFile(wb, `Daftar_Sukses_Import_${this.importType}.xlsx`);
+                },
+
+                downloadManualAccount() {
+                    if (!this.manualSuccessData) return;
+                    const d = this.manualSuccessData;
+                    const content = `Detail Akun ${d.type.toUpperCase()}\n-------------------------\nEmail/Username: ${d.email}\nPassword: ${d.password}\n\nHarap simpan informasi ini dengan aman.`;
+                    const blob = new Blob([content], { type: 'text/plain' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `Akun_${d.type}_${d.username}.txt`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                },
+
+                async submitManualForm() {
+                    this.manualMsg = '';
+                    this.manualSuccessData = null;
+                    const f = this.manualForm;
+                    const type = this.manualType;
+
+                    // Validasi dasar
+                    if (type === 'mapel') {
+                        if (!f.nama_mapel || !f.kelas) { this.manualMsg = '❌ Nama Mapel dan Kelas wajib diisi.'; return; }
+                    } else {
+                        if (type === 'siswa') {
+                            if (!f.nama_lengkap) { this.manualMsg = '❌ Nama Lengkap wajib diisi.'; return; }
+                            if (!f.kelas) { this.manualMsg = '❌ Kelas wajib diisi untuk siswa.'; return; }
+                        } else {
+                            if (!f.nama_lengkap || !f.nama_panggilan) { this.manualMsg = '❌ Nama Lengkap dan Nama Panggilan wajib diisi.'; return; }
+                            if (type === 'operator' && !f.no_hp) { this.manualMsg = '❌ No HP wajib diisi untuk operator.'; return; }
+                        }
+                    }
+
+                    this.manualProcessing = true;
+                    try {
+                        if (type === 'mapel') {
+                            // Build item sesuai format processImportItem
+                            const item = { 'Nama Mapel': f.nama_mapel, 'Kelas': f.kelas, 'Jurusan': f.jurusan || '' };
+                            const result = await window.processImportItem(item, 'mapel');
+                            if (result.success) {
+                                this.manualMsg = '✅ Mapel berhasil disimpan!';
+                                this.manualSuccessData = { type: 'mapel', ...result };
+                                this.manualForm = {};
+                            }
+                            else { this.manualMsg = '❌ ' + (result.error || 'Gagal menyimpan.'); }
+                        } else {
+                            // Build item sesuai format processImportItem
+                            let item = { 'Nama Lengkap': f.nama_lengkap };
+                            let processType = type;
+
+                            if (type !== 'siswa') {
+                                item['Nama Panggilan'] = f.nama_panggilan;
+                                item['Password'] = f.password || '';
+                            }
+
+                            if (type === 'siswa') {
+                                item['Kelas'] = f.kelas || '';
+                                item['Jurusan'] = f.jurusan || '';
+                                item['Jenis Kelamin'] = f.jenis_kelamin || '';
+                                item['No HP Ortu'] = f.no_hp_ortu || '';
+                            } else if (type === 'guru') {
+                                item['Jenis Kelamin'] = f.jenis_kelamin || '';
+                                item['No HP'] = f.no_hp || '';
+                            } else if (type === 'operator') {
+                                // Operator uses same flow as guru but with operator domain
+                                item['No HP'] = f.no_hp || '';
+                                processType = 'operator';
+                            }
+
+                            const result = await window.processImportItem(item, processType);
+                            if (result.success) {
+                                this.manualMsg = `✅ ${type.charAt(0).toUpperCase() + type.slice(1)} berhasil dibuat!`;
+                                this.manualSuccessData = { type: type, ...result };
+                                this.manualForm = {};
+                            } else {
+                                this.manualMsg = '❌ ' + (result.error || 'Gagal menyimpan.');
+                            }
+                        }
+                    } catch (e) {
+                        this.manualMsg = '❌ Error: ' + e.message;
+                    }
+                    this.manualProcessing = false;
+                }
+            }
+        }
+    </script>
+</body>
+
+</html>

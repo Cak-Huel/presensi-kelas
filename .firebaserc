@@ -1,0 +1,15 @@
+{
+  "projects": {
+    "default": "absensi-ff26f"
+  },
+  "targets": {
+    "absensi-ff26f": {
+      "hosting": {
+        "webutama": [
+          "sikas-smknessa"
+        ]
+      }
+    }
+  },
+  "etags": {}
+}

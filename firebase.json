@@ -1,0 +1,24 @@
+{
+  "firestore": {
+    "database": "(default)",
+    "location": "asia-southeast2",
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
+  "hosting": {
+    "target": "webutama",
+    "public": ".",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**",
+      "service-account.json",
+      "accounts.json",
+      "**/*.bat",
+      "**/*.sh",
+      "**/*.exe",
+      "pages/admin_tester.html",
+      "restore_database.html"
+    ]
+  }
+}

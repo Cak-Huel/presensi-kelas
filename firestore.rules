@@ -1,0 +1,80 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper functions for authorization
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isAdminOrOperator() {
+      return isAuthenticated() && 
+             (request.auth.token.email.matches('.*@admin\\.absensi\\.id$') || 
+              request.auth.token.email.matches('.*@operator\\.absensi\\.id$'));
+    }
+    
+    function isGuru() {
+      return isAuthenticated() && 
+             request.auth.token.email.matches('.*@guru\\.absensi\\.id$');
+    }
+
+    // Rules for users collection
+    match /users/{userId} {
+      allow read: if isAuthenticated() && (request.auth.uid == userId || isAdminOrOperator() || isGuru());
+      allow write: if isAdminOrOperator();
+    }
+
+    // Rules for siswa collection
+    match /siswa/{siswaId} {
+      allow read: if isAuthenticated() && (request.auth.uid == siswaId || isAdminOrOperator() || isGuru());
+      allow write: if isAdminOrOperator();
+    }
+
+    // Rules for presensi_siswa collection
+    match /presensi_siswa/{docId} {
+      allow read: if isAdminOrOperator() || isGuru() || (isAuthenticated() && (
+        (resource.data.nama_panggilan != null && resource.data.nama_panggilan == get(/databases/$(database)/documents/siswa/$(request.auth.uid)).data.nama_panggilan) ||
+        (resource.data.nisn != null && resource.data.nisn == get(/databases/$(database)/documents/siswa/$(request.auth.uid)).data.nisn)
+      ));
+      allow create: if isAuthenticated();
+      allow update: if isAdminOrOperator() || isGuru();
+      allow delete: if isAdminOrOperator();
+    }
+
+    // Rules for qr_sessions collection
+    match /qr_sessions/{docId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isAdminOrOperator() || isGuru();
+      allow delete: if isAdminOrOperator();
+    }
+
+    // Rules for kelas, jurusan, and mapel collections
+    match /kelas/{id} {
+      allow read: if isAuthenticated();
+      allow write: if isAdminOrOperator();
+    }
+
+    match /jurusan/{id} {
+      allow read: if isAuthenticated();
+      allow write: if isAdminOrOperator();
+    }
+
+    match /mapel/{id} {
+      allow read: if isAuthenticated();
+      allow write: if isAdminOrOperator();
+    }
+
+    // Shared reports - public read for anonymous access via WA link
+    match /shared_reports/{token} {
+      allow read: if true;
+      allow write: if isAdminOrOperator();
+    }
+
+    // Settings collection (WhatsApp numbers, etc)
+    match /settings/{docId} {
+      allow read: if isAdminOrOperator() || isGuru();
+      allow write: if isAdminOrOperator();
+    }
+  }
+}

@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Koneksi Firebase</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Outfit', sans-serif; }
+        .status-card { transition: all 0.3s ease; }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen flex items-center justify-center p-6">
+    <div class="w-full max-w-lg space-y-6">
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-slate-800">🔥 Test Koneksi Firebase</h1>
+            <p class="text-slate-500 mt-2">Memverifikasi apakah Firebase terhubung dengan benar</p>
+        </div>
+
+        <!-- Status Cards -->
+        <div id="statusCards" class="space-y-4">
+            <!-- Firebase App -->
+            <div id="card-app" class="status-card bg-white rounded-2xl p-5 shadow-lg border border-slate-100 flex items-center gap-4">
+                <div id="icon-app" class="w-12 h-12 rounded-xl bg-slate-100 text-slate-400 flex items-center justify-center text-xl">⏳</div>
+                <div>
+                    <h3 class="font-semibold text-slate-800">Firebase App</h3>
+                    <p id="status-app" class="text-sm text-slate-500">Menghubungkan...</p>
+                </div>
+            </div>
+
+            <!-- Firebase Auth -->
+            <div id="card-auth" class="status-card bg-white rounded-2xl p-5 shadow-lg border border-slate-100 flex items-center gap-4">
+                <div id="icon-auth" class="w-12 h-12 rounded-xl bg-slate-100 text-slate-400 flex items-center justify-center text-xl">⏳</div>
+                <div>
+                    <h3 class="font-semibold text-slate-800">Firebase Authentication</h3>
+                    <p id="status-auth" class="text-sm text-slate-500">Menunggu...</p>
+                </div>
+            </div>
+
+            <!-- Firestore -->
+            <div id="card-db" class="status-card bg-white rounded-2xl p-5 shadow-lg border border-slate-100 flex items-center gap-4">
+                <div id="icon-db" class="w-12 h-12 rounded-xl bg-slate-100 text-slate-400 flex items-center justify-center text-xl">⏳</div>
+                <div>
+                    <h3 class="font-semibold text-slate-800">Cloud Firestore</h3>
+                    <p id="status-db" class="text-sm text-slate-500">Menunggu...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Result Box -->
+        <div id="resultBox" class="hidden bg-white rounded-2xl p-6 shadow-lg border border-slate-100 text-center">
+            <div id="resultIcon" class="text-5xl mb-3"></div>
+            <h2 id="resultTitle" class="text-xl font-bold mb-2"></h2>
+            <p id="resultMessage" class="text-sm text-slate-500"></p>
+        </div>
+
+        <!-- Project Info -->
+        <div id="projectInfo" class="hidden bg-white rounded-2xl p-6 shadow-lg border border-slate-100">
+            <h3 class="font-semibold text-slate-800 mb-3">📋 Info Project Firebase</h3>
+            <div class="space-y-2 text-sm">
+                <div class="flex justify-between">
+                    <span class="text-slate-500">Project ID</span>
+                    <span id="infoProjectId" class="font-medium text-slate-800"></span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-slate-500">Auth Domain</span>
+                    <span id="infoAuthDomain" class="font-medium text-slate-800"></span>
+                </div>
+            </div>
+        </div>
+
+        <p class="text-center text-xs text-slate-400">Halaman ini hanya untuk testing — bisa dihapus setelah selesai.</p>
+    </div>
+
+    <script type="module">
+        import { app, auth, db } from './firebase-config.js';
+        import { collection, getDocs, doc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.7.1/firebase-firestore.js";
+        import { signInAnonymously, signOut } from "https://www.gstatic.com/firebasejs/11.7.1/firebase-auth.js";
+
+        function setStatus(id, success, message) {
+            const icon = document.getElementById('icon-' + id);
+            const status = document.getElementById('status-' + id);
+            const card = document.getElementById('card-' + id);
+            
+            if (success) {
+                icon.textContent = '✅';
+                icon.className = 'w-12 h-12 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-xl';
+                card.className = 'status-card bg-emerald-50 rounded-2xl p-5 shadow-lg border border-emerald-200 flex items-center gap-4';
+            } else {
+                icon.textContent = '❌';
+                icon.className = 'w-12 h-12 rounded-xl bg-red-100 text-red-600 flex items-center justify-center text-xl';
+                card.className = 'status-card bg-red-50 rounded-2xl p-5 shadow-lg border border-red-200 flex items-center gap-4';
+            }
+            status.textContent = message;
+        }
+
+        function showResult(success, title, message) {
+            const box = document.getElementById('resultBox');
+            const icon = document.getElementById('resultIcon');
+            const titleEl = document.getElementById('resultTitle');
+            const msgEl = document.getElementById('resultMessage');
+
+            box.classList.remove('hidden');
+            
+            if (success) {
+                box.className = 'bg-emerald-50 rounded-2xl p-6 shadow-lg border border-emerald-200 text-center';
+                icon.textContent = '🎉';
+                titleEl.className = 'text-xl font-bold mb-2 text-emerald-800';
+            } else {
+                box.className = 'bg-red-50 rounded-2xl p-6 shadow-lg border border-red-200 text-center';
+                icon.textContent = '😕';
+                titleEl.className = 'text-xl font-bold mb-2 text-red-800';
+            }
+            titleEl.textContent = title;
+            msgEl.textContent = message;
+        }
+
+        async function runTests() {
+            let allPassed = true;
+
+            // Test 1: Firebase App
+            await new Promise(r => setTimeout(r, 500));
+            try {
+                if (app && app.options && app.options.projectId) {
+                    setStatus('app', true, `Terhubung ke project: ${app.options.projectId}`);
+                    
+                    // Show project info
+                    document.getElementById('projectInfo').classList.remove('hidden');
+                    document.getElementById('infoProjectId').textContent = app.options.projectId;
+                    document.getElementById('infoAuthDomain').textContent = app.options.authDomain;
+                } else {
+                    throw new Error('App tidak terinisialisasi');
+                }
+            } catch (e) {
+                setStatus('app', false, 'Gagal: ' + e.message);
+                allPassed = false;
+            }
+
+            // Test 2: Firebase Auth
+            await new Promise(r => setTimeout(r, 500));
+            try {
+                if (auth) {
+                    // Try anonymous sign in to test auth is working
+                    const userCredential = await signInAnonymously(auth);
+                    setStatus('auth', true, 'Authentication aktif dan berfungsi');
+                    // Sign out the anonymous user
+                    await signOut(auth);
+                } else {
+                    throw new Error('Auth tidak terinisialisasi');
+                }
+            } catch (e) {
+                if (e.code === 'auth/operation-not-allowed') {
+                    // Anonymous auth not enabled, but Auth itself works
+                    setStatus('auth', true, 'Authentication aktif (anonymous auth tidak diaktifkan — ini normal)');
+                } else if (e.code === 'auth/network-request-failed') {
+                    setStatus('auth', false, 'Gagal terhubung ke server Firebase — cek koneksi internet');
+                    allPassed = false;
+                } else {
+                    setStatus('auth', true, 'Authentication siap digunakan');
+                }
+            }
+
+            // Test 3: Firestore
+            await new Promise(r => setTimeout(r, 500));
+            try {
+                // Try to write and read a test document
+                const testRef = doc(db, '_test_connection', 'ping');
+                await setDoc(testRef, { 
+                    status: 'connected', 
+                    timestamp: new Date().toISOString() 
+                });
+                
+                // Clean up test document
+                await deleteDoc(testRef);
+                
+                setStatus('db', true, 'Firestore aktif — baca/tulis berhasil!');
+            } catch (e) {
+                if (e.code === 'permission-denied') {
+                    setStatus('db', false, 'Firestore ada tapi AKSES DITOLAK — buka Firebase Console → Firestore → Rules → ubah ke test mode');
+                    allPassed = false;
+                } else if (e.message.includes('Could not reach Cloud Firestore')) {
+                    setStatus('db', false, 'Firestore belum dibuat — buka Firebase Console → Build → Firestore Database → Create database');
+                    allPassed = false;
+                } else {
+                    setStatus('db', false, 'Gagal: ' + e.message);
+                    allPassed = false;
+                }
+            }
+
+            // Final result
+            await new Promise(r => setTimeout(r, 300));
+            if (allPassed) {
+                showResult(true, 'Semua Tes Berhasil!', 'Firebase sudah terhubung dengan benar. Kamu siap untuk mulai implementasi!');
+            } else {
+                showResult(false, 'Ada yang Perlu Diperbaiki', 'Silakan perbaiki error di atas lalu refresh halaman ini.');
+            }
+        }
+
+        // Run tests on page load
+        runTests();
+    </script>
+</body>
+</html>

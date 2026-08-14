@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="id" class="antialiased">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Data Siswa - Sistem Absensi">
+    <link rel="icon" type="image/png" href="../assets/img/favicon.png">
+    <title>Data Siswa - Sistem Absensi</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.15.12/dist/cdn.min.js"></script>
+    <!-- SheetJS for Export -->
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+    <!-- QRious for QR Code -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+
+    <script src="../shared/tailwind-config.js"></script>
+    <link rel="stylesheet" href="../shared/styles.css">
+    <script src="../shared/theme.js"></script>
+    <style>
+        @media print {
+            body * { display: none !important; }
+            #print-area { display: flex !important; position: absolute; left: 0; top: 0; width: 100%; flex-wrap: wrap; gap: 15px; justify-content: flex-start; align-content: flex-start; }
+            #print-area * { display: block !important; }
+            #print-area .qr-card { display: flex !important; flex-direction: column !important; align-items: center !important; justify-content: center !important; width: 54mm !important; height: 86mm !important; border: 1px solid #000 !important; border-radius: 8px !important; padding: 4mm !important; page-break-inside: avoid !important; box-sizing: border-box !important; }
+            #print-area .card-header { text-align: center !important; margin-bottom: 10px !important; width: 100% !important; }
+            #print-area .font-bold { font-weight: bold !important; font-size: 14px !important; text-transform: uppercase !important; overflow: hidden !important; text-overflow: ellipsis !important; white-space: nowrap !important; }
+            #print-area .text-xs { font-size: 12px !important; font-weight: 600 !important; }
+            #print-area .text-tiny { font-size: 10px !important; }
+            #print-area img { width: 35mm !important; height: 35mm !important; object-fit: contain !important; margin: 0 auto 10px auto !important; display: block !important; }
+            #print-area .footer { text-align: center !important; font-size: 8px !important; margin-top: auto !important; }
+        }
+    </style>
+</head>
+
+<body
+    class="bg-surface-dim dark:bg-surface-dark-dim text-slate-900 dark:text-slate-200 transition-colors duration-300 min-h-screen"
+    x-data="adminSiswa()" x-init="initSiswa()">
+
+    <!-- Toast Notification -->
+    <div x-show="toast.show" x-cloak
+        x-transition:enter="transition ease-out duration-300 transform"
+        x-transition:enter-start="opacity-0 translate-x-8"
+        x-transition:enter-end="opacity-100 translate-x-0"
+        x-transition:leave="transition ease-in duration-200 transform"
+        x-transition:leave-start="opacity-100 translate-x-0"
+        x-transition:leave-end="opacity-0 translate-x-8"
+        class="fixed top-6 right-6 z-[100] flex items-center p-4 mb-4 text-slate-800 bg-white rounded-xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.15)] dark:text-slate-200 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 max-w-sm w-full"
+        role="alert">
+        <div class="inline-flex items-center justify-center flex-shrink-0 w-8 h-8 rounded-lg"
+            :class="toast.type === 'success' ? 'text-emerald-500 bg-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-400' : 'text-red-500 bg-red-100 dark:bg-red-900/30 dark:text-red-400'">
+            <span class="material-symbols-rounded text-xl" x-text="toast.type === 'success' ? 'check_circle' : 'error'"></span>
+        </div>
+        <div class="ms-3 text-sm font-medium pr-4" x-text="toast.message"></div>
+        <button type="button" @click="toast.show = false"
+            class="ms-auto -mx-1.5 -my-1.5 bg-white text-slate-400 hover:text-slate-900 rounded-lg focus:ring-2 focus:ring-slate-300 p-1.5 hover:bg-slate-100 inline-flex items-center justify-center h-8 w-8 dark:text-slate-500 dark:hover:text-white dark:bg-slate-800 dark:hover:bg-slate-700">
+            <span class="material-symbols-rounded text-lg">close</span>
+        </button>
+    </div>
+
+    <div class="flex h-screen overflow-hidden">
+
+        <!-- Sidebar (Desktop & Mobile) -->
+        <aside
+            class="fixed inset-y-0 left-0 z-50 w-64 glass  shadow-[0_24px_40px_-12px_rgba(0,0,0,0.06)] dark:shadow-[0_24px_40px_-12px_rgba(0,0,0,0.3)] transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0"
+            :class="{'translate-x-0': sidebarOpen, '-translate-x-full': !sidebarOpen}">
+
+            <!-- Logo area -->
+            <div class="flex items-center justify-between h-20 px-6 border-b border-slate-900/15 dark:border-white/15 ">
+                <div class="flex items-center gap-3">
+                    <div
+                        class="w-10 h-10 rounded-xl bg-gradient-to-tr from-primary to-primary text-white flex items-center justify-center shadow-lg shadow-primary/20">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                            stroke-width="2" class="w-6 h-6">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+                        </svg>
+                    </div>
+                    <span class="font-bold text-lg tracking-tight">AdminPanel</span>
+                </div>
+                <!-- Close Mobile Sidebar -->
+                <button @click="sidebarOpen = false" class="md:hidden text-slate-500 hover:text-primary">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
+                        stroke="currentColor" class="w-6 h-6">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Navigation Links -->
+            <nav class="p-4 space-y-2 overflow-y-auto h-[calc(100vh-5rem)]">
+                <a href="admin_dashboard.html"
+                    class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                        stroke="currentColor" class="w-5 h-5">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
+                    </svg>
+                    <span class="font-medium">Dashboard</span>
+                </a>
+
+                <div class="pt-4 mt-4 border-t border-slate-900/15 dark:border-white/15 ">
+                    <p class="px-4 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Manajemen</p>
+                    <a href="admin_siswa.html"
+                        class="flex items-center gap-3 px-4 py-3 rounded-xl bg-primary text-white shadow-md shadow-primary/20 transition-all">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                            stroke="currentColor" class="w-5 h-5">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
+                        </svg>
+                        <span class="font-medium">Data Siswa</span>
+                    </a>
+                    <a href="admin_guru.html"
+                        class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                            stroke="currentColor" class="w-5 h-5">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M4.26 10.147a60.436 60.436 0 00-.491 6.347A48.627 48.627 0 0112 20.904a48.627 48.627 0 018.232-4.41 60.46 60.46 0 00-.491-6.347m-15.482 0a50.57 50.57 0 00-2.658-.813A59.905 59.905 0 0112 3.493a59.902 59.902 0 0110.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.697 50.697 0 0112 13.489a50.702 50.702 0 017.74-3.342M6.75 15a.75.75 0 100-1.5.75.75 0 000 1.5zm0 0v-3.675A55.378 55.378 0 0112 8.443m-7.007 11.55A5.981 5.981 0 006.75 15.75v-1.5" />
+                        </svg>
+                        <span class="font-medium">Data Guru</span>
+                    </a>
+                    <a href="admin_import.html"
+                        class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                            stroke="currentColor" class="w-5 h-5">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+                        </svg>
+                        <span class="font-medium">Manajemen Data</span>
+                    </a>
+                    <a href="admin_rekap.html"
+                        class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                            stroke="currentColor" class="w-5 h-5">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                        </svg>
+                        <span class="font-medium">Rekap Absensi</span>
+                    </a>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- Overlay for Mobile Sidebar -->
+        <div x-show="sidebarOpen" x-cloak class="fixed inset-0 z-40 bg-slate-900/50 backdrop-blur-sm md:hidden"
+            @click="sidebarOpen = false"></div>
+
+        <!-- Main Content Wrapper -->
+        <div class="flex-1 flex flex-col h-screen overflow-hidden">
+
+            <!-- Top Navbar -->
+            <header class="h-20 glass flex items-center justify-between px-6 z-30">
+                <div class="flex items-center gap-4">
+                    <button @click="sidebarOpen = !sidebarOpen"
+                        class="md:hidden p-2 rounded-xl text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                            stroke="currentColor" class="w-6 h-6">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25H12" />
+                        </svg>
+                    </button>
+                    <h1 class="text-xl font-bold hidden sm:block font-serif">Data Siswa & Manajemen</h1>
+                </div>
+
+                <div class="flex items-center gap-4">
+                    <!-- Dark Mode Toggle -->
+                    <button @click="toggleTheme()"
+                        class="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                        <svg x-show="!isDark" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                            stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />
+                        </svg>
+                        <svg x-show="isDark" style="display: none;" xmlns="http://www.w3.org/2000/svg" fill="none"
+                            viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"
+                            class="w-5 h-5 text-yellow-400">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />
+                        </svg>
+                    </button>
+
+                    <!-- Profile Menu Dropdown -->
+                    <div class="relative" x-data="{ open: false }">
+                        <button @click="open = !open" @click.away="open = false"
+                            class="flex items-center gap-3 p-1.5 rounded-full hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                            <div
+                                class="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center">
+                                <span class="material-symbols-rounded text-xl">admin_panel_settings</span>
+                            </div>
+                        </button>
+
+                        <div x-show="open" x-cloak
+                            class="absolute right-0 mt-2 w-48 bg-surface-lowest dark:bg-surface-dark-lowest rounded-2xl shadow-[0_24px_40px_-12px_rgba(0,0,0,0.06)] dark:shadow-[0_24px_40px_-12px_rgba(0,0,0,0.3)] py-2 z-50">
+                            <div class="px-4 py-2 border-b border-slate-900/15 dark:border-white/15  mb-1">
+                                <p class="text-sm font-medium">Administrator</p>
+                                <p class="text-xs text-slate-500">Super Admin</p>
+                            </div>
+                            <button @click="window.location.href='admin_dashboard.html'"
+                                class="w-full flex items-center gap-2 text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                                <span class="material-symbols-rounded text-lg">password</span> Ubah Sandi
+                            </button>
+                            <button @click="logout()"
+                                class="w-full flex items-center gap-2 text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors border-t border-slate-900/15 dark:border-white/15">
+                                <span class="material-symbols-rounded text-lg">logout</span>
+                                Keluar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Scrollable Content -->
+            <main class="flex-1 overflow-y-auto p-6">
+
+                <!-- Actions Bar -->
+                <div class="mb-8 bg-surface-lowest dark:bg-surface-dark-lowest rounded-3xl p-5 sm:p-6 shadow-[0_24px_40px_-12px_rgba(0,0,0,0.06)] dark:shadow-[0_24px_40px_-12px_rgba(0,0,0,0.3)] border border-slate-100 dark:border-slate-800">
+                    <div class="flex flex-col xl:flex-row gap-5 items-start xl:items-end justify-between">
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 w-full xl:flex-1 xl:max-w-3xl">
+                            <!-- Filter Kelas -->
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-500 mb-1.5 ml-1">Filter Kelas</label>
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                                        <span class="material-symbols-rounded text-lg">meeting_room</span>
+                                    </div>
+                                    <select x-model="filterKelas"
+                                        class="w-full bg-slate-50/50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl pl-10 pr-4 py-2.5 text-sm font-medium focus:ring-2 focus:ring-primary/30 focus:border-primary focus:bg-white dark:focus:bg-slate-900 outline-none transition-all appearance-none cursor-pointer">
+                                        <option value="">Semua Kelas</option>
+                                        <template x-for="kelas in listKelas" :key="kelas">
+                                            <option :value="kelas" x-text="kelas"></option>
+                                        </template>
+                                    </select>
+                                    <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-slate-400">
+                                        <span class="material-symbols-rounded text-lg">expand_more</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Filter Jurusan -->
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-500 mb-1.5 ml-1">Filter Jurusan</label>
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                                        <span class="material-symbols-rounded text-lg">school</span>
+                                    </div>
+                                    <select x-model="filterJurusan"
+                                        class="w-full bg-slate-50/50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl pl-10 pr-4 py-2.5 text-sm font-medium focus:ring-2 focus:ring-primary/30 focus:border-primary focus:bg-white dark:focus:bg-slate-900 outline-none transition-all appearance-none cursor-pointer">
+                                        <option value="">Semua Jurusan</option>
+                                        <template x-for="jurusan in listJurusan" :key="jurusan">
+                                            <option :value="jurusan" x-text="jurusan"></option>
+                                        </template>
+                                    </select>
+                                    <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-slate-400">
+                                        <span class="material-symbols-rounded text-lg">expand_more</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Cari Nama -->
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-500 mb-1.5 ml-1">Cari Nama Siswa</label>
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                                        <span class="material-symbols-rounded text-lg">search</span>
+                                    </div>
+                                    <input type="text" x-model="searchQuery" placeholder="Ketik nama..."
+                                        class="w-full bg-slate-50/50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl pl-10 pr-4 py-2.5 text-sm font-medium focus:ring-2 focus:ring-primary/30 focus:border-primary focus:bg-white dark:focus:bg-slate-900 outline-none transition-all placeholder:font-normal">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="flex flex-col sm:flex-row items-center gap-3 w-full xl:w-auto mt-2 xl:mt-0 pt-5 xl:pt-0 border-t border-slate-100 dark:border-slate-800 xl:border-none">
+                            <button @click="cetakQR('filter')" :disabled="loading || filteredSiswa.length === 0"
+                                class="w-full sm:w-auto px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-700 hover:to-indigo-600 text-white rounded-xl text-sm font-semibold transition-all shadow-lg shadow-indigo-500/20 disabled:opacity-50 disabled:shadow-none flex items-center justify-center gap-2.5 whitespace-nowrap hover:-translate-y-0.5 active:translate-y-0">
+                                <span class="material-symbols-rounded text-[18px]">qr_code_2</span>
+                                <span>Cetak QR</span>
+                            </button>
+                            <button @click="eksekusiNaikKelas()" :disabled="processingNaikKelas"
+                                class="w-full sm:w-auto px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600 text-white rounded-xl text-sm font-semibold transition-all shadow-lg shadow-emerald-500/20 disabled:opacity-50 disabled:shadow-none disabled:cursor-not-allowed flex items-center justify-center gap-2.5 whitespace-nowrap hover:-translate-y-0.5 active:translate-y-0">
+                                <span class="material-symbols-rounded text-[18px]" x-show="!processingNaikKelas">upgrade</span>
+                                <span x-show="!processingNaikKelas">Naik Kelas</span>
+                                <span class="material-symbols-rounded text-[18px] animate-spin" x-show="processingNaikKelas">sync</span>
+                                <span x-show="processingNaikKelas">Memproses...</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Data Table -->
+                <div
+                    class="bg-surface-lowest dark:bg-surface-dark-lowest rounded-3xl shadow-lg shadow-slate-200/30 dark:shadow-black/20 overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr
+                                    class="bg-slate-50/50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700 text-sm">
+                                    <th class="px-6 py-4 font-semibold">Nama Lengkap</th>
+                                    <th class="px-6 py-4 font-semibold">Kelas</th>
+                                    <th class="px-6 py-4 font-semibold">Jurusan</th>
+                                    <th class="px-6 py-4 font-semibold">Gender</th>
+                                    <th class="px-6 py-4 font-semibold">No. HP</th>
+                                    <th class="px-6 py-4 font-semibold text-center">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+                                <template x-if="filteredSiswa.length === 0">
+                                    <tr>
+                                        <td colspan="6" class="px-6 py-8 text-center text-slate-500">
+                                            <span x-show="loading">Memuat data...</span>
+                                            <span x-show="!loading">Tidak ada data siswa ditemukan.</span>
+                                        </td>
+                                    </tr>
+                                </template>
+
+                                <template x-for="siswa in paginatedSiswa()" :key="siswa.id">
+                                    <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
+                                        <td class="px-6 py-4">
+                                            <div class="font-medium" x-text="siswa.nama_lengkap || '-'"></div>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <span
+                                                class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300"
+                                                x-text="siswa.kelas || '-'"></span>
+                                        </td>
+                                        <td class="px-6 py-4 text-sm" x-text="siswa.jurusan || '-'"></td>
+                                        <td class="px-6 py-4 text-sm" x-text="siswa.jenis_kelamin || '-'"></td>
+                                        <td class="px-6 py-4 text-sm" x-text="siswa.no_hp_ortu || '-'"></td>
+                                        <td class="px-6 py-4 text-center flex items-center justify-center gap-2">
+                                            <button @click="cetakQR('single', siswa)"
+                                                class="p-2 bg-indigo-100 hover:bg-indigo-200 dark:bg-indigo-900/30 dark:hover:bg-indigo-900/50 rounded-lg text-indigo-600 dark:text-indigo-400 transition-colors"
+                                                title="Cetak QR Code Siswa">
+                                                <span class="material-symbols-rounded text-base">qr_code</span>
+                                            </button>
+                                            <button @click="openEditModal(siswa)"
+                                                class="p-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 rounded-lg text-primary transition-colors"
+                                                title="Edit Siswa">
+                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                                    stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" />
+                                                </svg>
+                                            </button>
+                                            <button @click="deleteSiswa(siswa)"
+                                                class="p-2 bg-red-100 hover:bg-red-200 dark:bg-red-900/30 dark:hover:bg-red-900/50 rounded-lg text-red-600 dark:text-red-400 transition-colors"
+                                                title="Hapus Siswa">
+                                                <span class="material-symbols-rounded text-base">delete</span>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div
+                        class="px-6 py-4 border-t border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 flex flex-col sm:flex-row justify-between items-center gap-4">
+                        <div class="text-sm text-slate-500">
+                            Menampilkan <span class="font-semibold text-slate-900 dark:text-slate-200"
+                                x-text="filteredSiswa.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0"></span> -
+                            <span class="font-semibold text-slate-900 dark:text-slate-200"
+                                x-text="Math.min(currentPage * itemsPerPage, filteredSiswa.length)"></span> dari <span
+                                class="font-semibold text-slate-900 dark:text-slate-200"
+                                x-text="filteredSiswa.length"></span> siswa
+                        </div>
+                        <div class="flex gap-2">
+                            <button @click="prevPage()" :disabled="currentPage === 1"
+                                class="px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                                Sebelumnya
+                            </button>
+                            <button @click="nextPage()" :disabled="currentPage >= totalPages()"
+                                class="px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                                Selanjutnya
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- Edit Modal -->
+    <div x-show="showEditModal" x-cloak
+        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+        x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0"
+        x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-150"
+        x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
+        <div class="bg-surface-lowest dark:bg-surface-dark-lowest rounded-3xl shadow-2xl w-full max-w-md overflow-hidden"
+            @click.away="showEditModal = false">
+            <div class="p-5 border-b border-slate-900/15 dark:border-white/15 flex items-center justify-between">
+                <h2 class="text-lg font-bold font-serif">Edit Data Siswa</h2>
+                <button @click="showEditModal = false"
+                    class="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500"><svg
+                        xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
+                        stroke="currentColor" class="w-5 h-5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg></button>
+            </div>
+            <div class="p-6 space-y-4" x-show="editSiswaData">
+                <div>
+                    <label class="block text-sm font-medium mb-1">Nama Lengkap</label>
+                    <input type="text" x-model="editSiswaData.nama_lengkap"
+                        class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary outline-none transition-all">
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Kelas</label>
+                        <input type="text" x-model="editSiswaData.kelas"
+                            class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary outline-none transition-all">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Jurusan</label>
+                        <input type="text" x-model="editSiswaData.jurusan"
+                            class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary outline-none transition-all">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Jenis Kelamin</label>
+                        <select x-model="editSiswaData.jenis_kelamin"
+                            class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary outline-none transition-all">
+                            <option value="L">Laki-laki (L)</option>
+                            <option value="P">Perempuan (P)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">No HP</label>
+                        <input type="text" x-model="editSiswaData.no_hp_ortu"
+                            class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary outline-none transition-all">
+                    </div>
+                </div>
+                <button @click="saveEdit()" :disabled="isSaving"
+                    class="w-full py-3 mt-2 bg-primary hover:bg-blue-700 text-white font-semibold rounded-xl transition-all disabled:opacity-50">
+                    <span x-show="!isSaving">Simpan Perubahan</span>
+                    <span x-show="isSaving">Menyimpan...</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Print Area -->
+    <div id="print-area" style="display: none;">
+        <template x-for="siswa in printSiswa" :key="siswa.id">
+            <div class="qr-card">
+                <div class="card-header">
+                    <div class="font-bold" x-text="siswa.nama_lengkap || '-'"></div>
+                    <div class="text-xs mt-1" x-text="siswa.kelas + (siswa.jurusan ? ' ' + siswa.jurusan : '')"></div>
+                </div>
+                <img :id="'qr-' + siswa.id" alt="QR Code" />
+                <div class="footer">Kartu Presensi Berlaku Hingga Lulus</div>
+            </div>
+        </template>
+    </div>
+
+    <script type="module">
+        import { auth, db } from '../firebase-config.js';
+        import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.7.1/firebase-auth.js";
+        import { doc, getDoc, collection, getDocs, query, orderBy, updateDoc, deleteDoc, where } from "https://www.gstatic.com/firebasejs/11.7.1/firebase-firestore.js";
+
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) { window.location.href = '../index.html'; return; }
+            if (!user.email.endsWith('@admin.absensi.id') && !user.email.endsWith('@operator.absensi.id')) { window.location.href = '../index.html'; return; }
+
+            const userDoc = await getDoc(doc(db, 'users', user.uid));
+            const adminData = userDoc.exists() ? userDoc.data() : { nama: 'Admin' };
+            localStorage.setItem('user_name', adminData.nama);
+
+            // Fetch Data Siswa
+            try {
+                const siswaSnap = await getDocs(collection(db, 'siswa'));
+                const siswaData = [];
+                const kelasSet = new Set();
+                const jurusanSet = new Set();
+
+                siswaSnap.forEach(d => {
+                    const data = d.data();
+                    siswaData.push({ id: d.id, ...data });
+                    if (data.kelas) kelasSet.add(data.kelas);
+                    if (data.jurusan) jurusanSet.add(data.jurusan);
+                });
+
+                // Fetch Jurusan collection just in case we have more
+                try {
+                    const jurSnap = await getDocs(collection(db, 'jurusan'));
+                    jurSnap.forEach(d => {
+                        if (d.data().nama) jurusanSet.add(d.data().nama);
+                    });
+                } catch (e) { console.error("Error fetching jurusan", e); }
+
+                window.dispatchEvent(new CustomEvent('firebase-admin-ready', {
+                    detail: {
+                        nama: adminData.nama,
+                        siswa: siswaData.sort((a, b) => (a.nama_lengkap || '').localeCompare(b.nama_lengkap || '')),
+                        listKelas: Array.from(kelasSet).sort((a, b) => a.localeCompare(b, undefined, { numeric: true })),
+                        listJurusan: Array.from(jurusanSet).sort()
+                    }
+                }));
+            } catch (e) {
+                console.error('Gagal fetch siswa:', e);
+                window.dispatchEvent(new CustomEvent('firebase-admin-ready', { detail: { nama: adminData.nama, siswa: [], listKelas: [], listJurusan: [] } }));
+            }
+        });
+
+        window.firebaseLogout = async function () {
+            await signOut(auth);
+            localStorage.clear();
+            window.location.href = '../index.html';
+        };
+
+        window.firebaseUpdateSiswa = async function (id, data) {
+            await updateDoc(doc(db, 'siswa', id), data);
+        };
+
+        window.firebaseDeleteSiswa = async function (id) {
+            await deleteDoc(doc(db, 'siswa', id));
+        };
+
+        window.getAuthToken = async function() {
+            if (!auth.currentUser) return null;
+            return await auth.currentUser.getIdToken(true);
+        };
+
+        window.firebaseBatchUpdateKelas = async function(fromKelas, toKelas) {
+            const { writeBatch } = await import("https://www.gstatic.com/firebasejs/11.7.1/firebase-firestore.js");
+            const q = query(collection(db, 'siswa'), where('kelas', '==', fromKelas));
+            const snap = await getDocs(q);
+            if (snap.empty) return 0;
+
+            // We can process in chunks of 500 if necessary, but typically a class is ~30-40 students
+            // and an entire grade is maybe 100-200. Firestore batch max is 500.
+            const batches = [];
+            let currentBatch = writeBatch(db);
+            let count = 0;
+            let total = 0;
+
+            snap.forEach(d => {
+                currentBatch.update(d.ref, { kelas: toKelas });
+                count++;
+                total++;
+                if (count === 499) {
+                    batches.push(currentBatch.commit());
+                    currentBatch = writeBatch(db);
+                    count = 0;
+                }
+            });
+            if (count > 0) batches.push(currentBatch.commit());
+
+            await Promise.all(batches);
+            return total;
+        };
+    </script>
+
+    <script>
+        function adminSiswa() {
+            return {
+                isDark: false,
+                sidebarOpen: window.innerWidth >= 768,
+                userName: '',
+                loading: true,
+
+                siswa: [],
+                listKelas: [],
+                listJurusan: [],
+
+                filterKelas: '',
+                filterJurusan: '',
+                searchQuery: '',
+
+                currentPage: 1,
+                itemsPerPage: 15,
+
+                showEditModal: false,
+                editSiswaData: null,
+                isSaving: false,
+                processingNaikKelas: false,
+                printSiswa: [],
+
+                toast: { show: false, message: '', type: 'success', timeoutId: null },
+                showToast(message, type = 'success') {
+                    this.toast.message = message;
+                    this.toast.type = type;
+                    this.toast.show = true;
+                    if (this.toast.timeoutId) clearTimeout(this.toast.timeoutId);
+                    this.toast.timeoutId = setTimeout(() => { this.toast.show = false; }, 5000);
+                },
+
+                initSiswa() {
+                    this.userName = localStorage.getItem('user_name') || 'Admin';
+                    ThemeUtil.init(this);
+
+                    window.addEventListener('firebase-admin-ready', (e) => {
+                        this.userName = e.detail.nama || 'Admin';
+                        this.siswa = e.detail.siswa || [];
+                        this.listKelas = e.detail.listKelas || [];
+                        this.listJurusan = e.detail.listJurusan || [];
+                        this.loading = false;
+                    });
+                },
+
+                async deleteSiswa(siswaObj) {
+                    if (!confirm(`Yakin ingin menghapus siswa ${siswaObj.nama_lengkap}?`)) return;
+                    try {
+                        if (window.firebaseDeleteSiswa) {
+                            await window.firebaseDeleteSiswa(siswaObj.id);
+                            this.siswa = this.siswa.filter(s => s.id !== siswaObj.id);
+                            this.showToast('Siswa berhasil dihapus!', 'success');
+                        }
+                    } catch(e) {
+                        this.showToast('Gagal menghapus siswa: ' + e.message, 'error');
+                    }
+                },
+
+                get filteredSiswa() {
+                    return this.siswa.filter(s => {
+                        const matchKelas = this.filterKelas === '' || s.kelas === this.filterKelas;
+                        const matchJurusan = this.filterJurusan === '' || s.jurusan === this.filterJurusan;
+                        const matchSearch = this.searchQuery === '' ||
+                            (s.nama_lengkap && s.nama_lengkap.toLowerCase().includes(this.searchQuery.toLowerCase()));
+
+                        return matchKelas && matchJurusan && matchSearch;
+                    });
+                },
+
+                // Pagination Methods
+                paginatedSiswa() {
+                    const start = (this.currentPage - 1) * this.itemsPerPage;
+                    return this.filteredSiswa.slice(start, start + this.itemsPerPage);
+                },
+                totalPages() {
+                    return Math.ceil(this.filteredSiswa.length / this.itemsPerPage) || 1;
+                },
+                nextPage() {
+                    if (this.currentPage < this.totalPages()) this.currentPage++;
+                },
+                prevPage() {
+                    if (this.currentPage > 1) this.currentPage--;
+                },
+
+                // Edit Methods
+                openEditModal(siswa) {
+                    // Copy to prevent live binding editing before save
+                    this.editSiswaData = { ...siswa };
+                    this.showEditModal = true;
+                },
+                async saveEdit() {
+                    if (!this.editSiswaData || this.isSaving) return;
+                    this.isSaving = true;
+                    try {
+                        if (window.firebaseUpdateSiswa) {
+                            await window.firebaseUpdateSiswa(this.editSiswaData.id, {
+                                nama_lengkap: this.editSiswaData.nama_lengkap || '',
+                                kelas: this.editSiswaData.kelas || '',
+                                jurusan: this.editSiswaData.jurusan || '',
+                                jenis_kelamin: this.editSiswaData.jenis_kelamin || '',
+                                no_hp_ortu: this.editSiswaData.no_hp_ortu || ''
+                            });
+                            // Update local data array
+                            const index = this.siswa.findIndex(s => s.id === this.editSiswaData.id);
+                            if (index !== -1) {
+                                this.siswa[index] = { ...this.siswa[index], ...this.editSiswaData };
+                            }
+                            this.showToast('Data siswa berhasil diperbarui!', 'success');
+                            this.showEditModal = false;
+                        }
+                    } catch (e) {
+                        this.showToast('Gagal menyimpan data: ' + e.message, 'error');
+                    }
+                    this.isSaving = false;
+                },
+
+                toggleTheme() {
+                    ThemeUtil.toggle(this);
+                },
+
+                async eksekusiNaikKelas() {
+                    if (!confirm('Peringatan: Aksi ini akan MELULUSKAN Kelas 12 menjadi Alumni, lalu menaikkan Kelas 11 menjadi 12, dan Kelas 10 menjadi 11 secara otomatis. Pastikan Anda sudah membackup data jika diperlukan. Lanjutkan?')) return;
+                    this.processingNaikKelas = true;
+                    try {
+                        let msg = "";
+                        const total12 = await window.firebaseBatchUpdateKelas('12', 'alumni');
+                        msg += `Lulus Kelas 12 -> Alumni: ${total12} siswa.\n`;
+                        
+                        const total11 = await window.firebaseBatchUpdateKelas('11', '12');
+                        msg += `Naik Kelas 11 -> 12: ${total11} siswa.\n`;
+                        
+                        const total10 = await window.firebaseBatchUpdateKelas('10', '11');
+                        msg += `Naik Kelas 10 -> 11: ${total10} siswa.\n`;
+                        
+                        this.showToast('Eksekusi Naik Kelas Selesai!', 'success');
+                        setTimeout(() => location.reload(), 2000);
+                    } catch(e) {
+                        this.showToast('Gagal mengeksekusi sistem naik kelas: ' + e.message, 'error');
+                    }
+                    this.processingNaikKelas = false;
+                },
+
+                async cetakQR(tipe = 'filter', singleSiswa = null) {
+                    if (tipe === 'single' && singleSiswa) {
+                        this.printSiswa = [singleSiswa];
+                    } else {
+                        this.printSiswa = this.filteredSiswa;
+                    }
+
+                    if (this.printSiswa.length === 0) {
+                        return this.showToast('Tidak ada data siswa untuk dicetak', 'error');
+                    }
+
+                    this.showToast('Menyiapkan ' + this.printSiswa.length + ' Kartu QR...', 'success');
+
+                    // Tunggu DOM print area ter-render
+                    await this.$nextTick();
+
+                    // Generate image untuk setiap QR
+                    this.printSiswa.forEach(s => {
+                        const img = document.getElementById('qr-' + s.id);
+                        if (img) {
+                            const qr = new QRious({
+                                value: s.id, // ID dokumen siswa sebagai value QR
+                                size: 300,
+                                level: 'H' // High error correction, aman kalau lecet
+                            });
+                            img.src = qr.toDataURL();
+                        }
+                    });
+
+                    // Tunda sedikit agar image base64 benar-benar ter-load ke src sebelum print dialog
+                    setTimeout(() => {
+                        window.print();
+                    }, 500);
+                },
+
+                logout() {
+                    if (window.firebaseLogout) window.firebaseLogout();
+                }
+            }
+        }
+    </script>
+</body>
+
+</html>

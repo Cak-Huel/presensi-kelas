@@ -1,0 +1,9 @@
+{
+  "version": 2,
+  "crons": [
+    {
+      "path": "/api/cron-rekap",
+      "schedule": "0 8 * * 5"
+    }
+  ]
+}

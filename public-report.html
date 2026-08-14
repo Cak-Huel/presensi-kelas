@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Laporan Rekap Absensi - Sistem Absensi">
+    <link rel="icon" type="image/png" href="assets/img/favicon.png">
+    <title>Laporan Absensi</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.15.12/dist/cdn.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    <script src="shared/tailwind-config.js"></script>
+    <link rel="stylesheet" href="shared/styles.css">
+    <style>
+        @media print {
+            body { background: white !important; color: black !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+            .print-container { box-shadow: none !important; border-radius: 0 !important; padding: 0 !important; }
+            table { font-size: 11px !important; }
+            th, td { padding: 6px 10px !important; border: 1px solid #cbd5e1 !important; }
+            thead { background: #f1f5f9 !important; }
+            .status-hadir { color: #059669 !important; font-weight: 700 !important; }
+            .status-alfa { color: #dc2626 !important; font-weight: 700 !important; }
+            .status-izin, .status-sakit { color: #d97706 !important; font-weight: 700 !important; }
+            @page { margin: 1.5cm; size: A4 landscape; }
+        }
+        .print-only { display: none; }
+    </style>
+</head>
+<body class="bg-slate-100 min-h-screen" x-data="publicReport()">
+
+    <!-- Print Header (only visible when printing) -->
+    <div class="print-only mb-4">
+        <div class="text-center border-b-2 border-slate-800 pb-3 mb-4">
+            <h1 class="text-xl font-bold uppercase tracking-wide">Laporan Rekap Absensi Siswa</h1>
+            <p class="text-sm text-slate-600 mt-1" x-text="reportInfo"></p>
+        </div>
+    </div>
+
+    <!-- Screen UI -->
+    <div class="no-print min-h-screen flex flex-col">
+        <!-- Top Bar -->
+        <header class="bg-white border-b border-slate-200 shadow-sm">
+            <div class="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center shadow-lg shadow-blue-600/20">
+                        <span class="material-symbols-rounded text-xl">summarize</span>
+                    </div>
+                    <div>
+                        <h1 class="font-bold text-lg font-serif text-slate-800">Laporan Absensi</h1>
+                        <p class="text-xs text-slate-500">Sistem Absensi Digital</p>
+                    </div>
+                </div>
+                <button x-show="state === 'loaded'" @click="window.print()"
+                    class="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl text-sm font-semibold transition-all shadow-lg shadow-blue-600/20 hover:shadow-blue-600/30 active:scale-95">
+                    <span class="material-symbols-rounded text-lg">print</span>
+                    Cetak Laporan
+                </button>
+            </div>
+        </header>
+        <!-- Main Content -->
+        <main class="flex-1 py-8 px-4 sm:px-6">
+            <div class="max-w-6xl mx-auto">
+
+                <!-- Loading State -->
+                <div x-show="state === 'loading'" class="flex flex-col items-center justify-center py-24">
+                    <div class="w-16 h-16 rounded-full border-4 border-blue-200 border-t-blue-600 animate-spin mb-6"></div>
+                    <p class="text-slate-500 font-medium">Memuat laporan...</p>
+                </div>
+
+                <!-- Error State -->
+                <div x-show="state === 'error'" x-cloak class="flex flex-col items-center justify-center py-24">
+                    <div class="w-20 h-20 rounded-full bg-red-100 text-red-500 flex items-center justify-center mb-6">
+                        <span class="material-symbols-rounded text-4xl">error</span>
+                    </div>
+                    <h2 class="text-xl font-bold text-slate-800 mb-2">Laporan Tidak Ditemukan</h2>
+                    <p class="text-slate-500 text-center max-w-md" x-text="errorMsg"></p>
+                </div>
+
+                <!-- Data Loaded -->
+                <div x-show="state === 'loaded'" x-cloak>
+                    <!-- Info Card -->
+                    <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 mb-6">
+                        <div class="flex flex-wrap items-center justify-between gap-4">
+                            <div>
+                                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Periode Laporan</p>
+                                <h2 class="text-lg font-bold text-slate-800 font-serif" x-text="reportInfo"></h2>
+                            </div>
+                            <div class="flex gap-3 flex-wrap">
+                                <div @click="setFilter('hadir')" class="bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-2 text-center cursor-pointer transition-all hover:shadow-md" :class="activeFilter === 'hadir' ? 'ring-2 ring-emerald-500 shadow-md' : ''">
+                                    <p class="text-xs text-emerald-600 font-medium">Hadir</p>
+                                    <p class="text-xl font-bold text-emerald-700" x-text="stats.hadir"></p>
+                                </div>
+                                <div @click="setFilter('izinSakit')" class="bg-amber-50 border border-amber-200 rounded-xl px-4 py-2 text-center cursor-pointer transition-all hover:shadow-md" :class="activeFilter === 'izinSakit' ? 'ring-2 ring-amber-500 shadow-md' : ''">
+                                    <p class="text-xs text-amber-600 font-medium">Izin/Sakit</p>
+                                    <p class="text-xl font-bold text-amber-700" x-text="stats.izinSakit"></p>
+                                </div>
+                                <div @click="setFilter('alfa')" class="bg-red-50 border border-red-200 rounded-xl px-4 py-2 text-center cursor-pointer transition-all hover:shadow-md" :class="activeFilter === 'alfa' ? 'ring-2 ring-red-500 shadow-md' : ''">
+                                    <p class="text-xs text-red-600 font-medium">Alfa</p>
+                                    <p class="text-xl font-bold text-red-700" x-text="stats.alfa"></p>
+                                </div>
+                                <div @click="setFilter('all')" class="bg-blue-50 border border-blue-200 rounded-xl px-4 py-2 text-center cursor-pointer transition-all hover:shadow-md" :class="activeFilter === 'all' ? 'ring-2 ring-blue-500 shadow-md' : ''">
+                                    <p class="text-xs text-blue-600 font-medium">Total</p>
+                                    <p class="text-xl font-bold text-blue-700" x-text="records.length"></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Table -->
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse text-sm">
+                                <thead>
+                                    <tr class="bg-slate-50 border-b border-slate-200">
+                                        <th class="px-5 py-3.5 font-semibold text-slate-600 w-8">#</th>
+                                        <th class="px-5 py-3.5 font-semibold text-slate-600">Nama Lengkap</th>
+                                        <th class="px-5 py-3.5 font-semibold text-slate-600">Kelas</th>
+                                        <th class="px-5 py-3.5 font-semibold text-slate-600">Jurusan</th>
+                                        <th class="px-5 py-3.5 font-semibold text-slate-600">Mapel</th>
+                                        <th class="px-5 py-3.5 font-semibold text-slate-600">Tanggal</th>
+                                        <th class="px-5 py-3.5 font-semibold text-slate-600">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100">
+                                    <template x-for="(r, i) in paginatedRecords" :key="i">
+                                        <tr class="hover:bg-slate-50/80 transition-colors">
+                                            <td class="px-5 py-3 text-slate-400 text-xs" x-text="(currentPage - 1) * itemsPerPage + i + 1"></td>
+                                            <td class="px-5 py-3 font-medium text-slate-800" x-text="r.nama || '-'"></td>
+                                            <td class="px-5 py-3 text-slate-600" x-text="r.kelas || '-'"></td>
+                                            <td class="px-5 py-3 text-slate-600" x-text="r.jurusan || '-'"></td>
+                                            <td class="px-5 py-3 text-slate-600" x-text="r.mapel || '-'"></td>
+                                            <td class="px-5 py-3 text-slate-600" x-text="r.tanggal || '-'"></td>
+                                            <td class="px-5 py-3">
+                                                <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold uppercase"
+                                                    :class="{
+                                                        'bg-emerald-100 text-emerald-700 status-hadir': r.status === 'hadir',
+                                                        'bg-red-100 text-red-700 status-alfa': r.status === 'alfa',
+                                                        'bg-amber-100 text-amber-700 status-izin': r.status === 'izin' || r.status === 'sakit'
+                                                    }" x-text="r.status"></span>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Pagination Controls -->
+                    <div class="mt-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+                        <div class="text-sm text-slate-500">
+                            Menampilkan <span class="font-medium text-slate-800" x-text="filteredRecords.length === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1"></span> - 
+                            <span class="font-medium text-slate-800" x-text="Math.min(currentPage * itemsPerPage, filteredRecords.length)"></span>
+                            dari <span class="font-medium text-slate-800" x-text="filteredRecords.length"></span> data
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button @click="prevPage()" :disabled="currentPage === 1" class="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium">
+                                Sebelumnya
+                            </button>
+                            <span class="text-sm text-slate-600 font-medium mx-2">Halaman <span x-text="currentPage"></span> dari <span x-text="totalPages"></span></span>
+                            <button @click="nextPage()" :disabled="currentPage === totalPages" class="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium">
+                                Selanjutnya
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Footer -->
+                    <div class="mt-6 text-center text-xs text-slate-400">
+                        Dicetak pada <span x-text="new Date().toLocaleDateString('id-ID', {weekday:'long', year:'numeric', month:'long', day:'numeric'})"></span>
+                        • Sistem Absensi Digital
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    <!-- Print-only table (duplicated for clean print) -->
+    <div class="print-only print-container">
+        <table class="w-full text-left border-collapse" style="font-size:11px">
+            <thead>
+                <tr style="background:#f1f5f9">
+                    <th style="border:1px solid #cbd5e1;padding:6px 10px">#</th>
+                    <th style="border:1px solid #cbd5e1;padding:6px 10px">Nama Lengkap</th>
+                    <th style="border:1px solid #cbd5e1;padding:6px 10px">Kelas</th>
+                    <th style="border:1px solid #cbd5e1;padding:6px 10px">Jurusan</th>
+                    <th style="border:1px solid #cbd5e1;padding:6px 10px">Mapel</th>
+                    <th style="border:1px solid #cbd5e1;padding:6px 10px">Tanggal</th>
+                    <th style="border:1px solid #cbd5e1;padding:6px 10px">Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                <template x-for="(r, i) in filteredRecords" :key="'p'+i">
+                    <tr>
+                        <td style="border:1px solid #cbd5e1;padding:6px 10px" x-text="i+1"></td>
+                        <td style="border:1px solid #cbd5e1;padding:6px 10px" x-text="r.nama||'-'"></td>
+                        <td style="border:1px solid #cbd5e1;padding:6px 10px" x-text="r.kelas||'-'"></td>
+                        <td style="border:1px solid #cbd5e1;padding:6px 10px" x-text="r.jurusan||'-'"></td>
+                        <td style="border:1px solid #cbd5e1;padding:6px 10px" x-text="r.mapel||'-'"></td>
+                        <td style="border:1px solid #cbd5e1;padding:6px 10px" x-text="r.tanggal||'-'"></td>
+                        <td style="border:1px solid #cbd5e1;padding:6px 10px;font-weight:700"
+                            :class="{'status-hadir':r.status==='hadir','status-alfa':r.status==='alfa','status-izin':r.status==='izin'||r.status==='sakit'}"
+                            x-text="r.status ? r.status.toUpperCase() : '-'"></td>
+                    </tr>
+                </template>
+            </tbody>
+        </table>
+        <div style="margin-top:24px;display:flex;justify-content:space-between;font-size:11px;color:#64748b">
+            <span x-text="'Total: ' + filteredRecords.length + ' data'"></span>
+            <span>Sistem Absensi Digital</span>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.7.1/firebase-app.js";
+        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.7.1/firebase-firestore.js";
+
+        const app = initializeApp({
+            apiKey: "AIzaSyD73B6Dw36j3EQ66P23DqnJvBR7GNmwp9E",
+            authDomain: "absensi-ff26f.firebaseapp.com",
+            projectId: "absensi-ff26f",
+            storageBucket: "absensi-ff26f.firebasestorage.app",
+            messagingSenderId: "780253705957",
+            appId: "1:780253705957:web:7f591a7d3413a948dc060c"
+        });
+        const db = getFirestore(app);
+
+        window.fetchSharedReport = async function(token) {
+            const snap = await getDoc(doc(db, 'shared_reports', token));
+            if (!snap.exists()) return null;
+            return snap.data();
+        };
+    </script>
+
+    <script>
+        function publicReport() {
+            return {
+                state: 'loading',
+                errorMsg: '',
+                records: [],
+                reportInfo: '',
+                stats: { hadir: 0, izinSakit: 0, alfa: 0 },
+                currentPage: 1,
+                itemsPerPage: 15,
+                activeFilter: 'all',
+                
+                get filteredRecords() {
+                    if (this.activeFilter === 'hadir') return this.records.filter(r => r.status === 'hadir');
+                    if (this.activeFilter === 'izinSakit') return this.records.filter(r => r.status === 'izin' || r.status === 'sakit');
+                    if (this.activeFilter === 'alfa') return this.records.filter(r => r.status === 'alfa');
+                    return this.records;
+                },
+                setFilter(f) {
+                    this.activeFilter = f;
+                    this.currentPage = 1;
+                },
+                
+                get paginatedRecords() {
+                    const start = (this.currentPage - 1) * this.itemsPerPage;
+                    return this.filteredRecords.slice(start, start + this.itemsPerPage);
+                },
+                get totalPages() {
+                    return Math.max(1, Math.ceil(this.filteredRecords.length / this.itemsPerPage));
+                },
+                prevPage() {
+                    if (this.currentPage > 1) this.currentPage--;
+                },
+                nextPage() {
+                    if (this.currentPage < this.totalPages) this.currentPage++;
+                },
+
+                async init() {
+                    // Reset stats
+                    this.stats = { hadir: 0, izinSakit: 0, alfa: 0 };
+                    
+                    const params = new URLSearchParams(window.location.search);
+                    const token = params.get('token');
+
+                    if (!token) {
+                        this.state = 'error';
+                        this.errorMsg = 'Token tidak ditemukan di URL. Pastikan Anda membuka link yang benar.';
+                        return;
+                    }
+
+                    // Tunggu hingga script Firebase type="module" selesai dimuat
+                    while(typeof window.fetchSharedReport !== 'function') {
+                        await new Promise(resolve => setTimeout(resolve, 50));
+                    }
+
+                    try {
+                        const data = await window.fetchSharedReport(token);
+                        if (!data || !data.records || data.records.length === 0) {
+                            this.state = 'error';
+                            this.errorMsg = 'Laporan dengan token ini tidak ditemukan atau sudah kadaluarsa.';
+                            return;
+                        }
+                        this.records = data.records;
+                        
+                        // Urutkan berdasarkan nama kemudian tanggal
+                        this.records.sort((a, b) => {
+                            const nameA = (a.nama || '').toLowerCase();
+                            const nameB = (b.nama || '').toLowerCase();
+                            if (nameA < nameB) return -1;
+                            if (nameA > nameB) return 1;
+                            
+                            const dateA = a.tanggal || '';
+                            const dateB = b.tanggal || '';
+                            if (dateA < dateB) return -1;
+                            if (dateA > dateB) return 1;
+                            
+                            return 0;
+                        });
+
+                        this.reportInfo = data.filter_info || 'Laporan Absensi';
+                        // Hitung statistik
+                        this.records.forEach(r => {
+                            if (r.status === 'hadir') this.stats.hadir++;
+                            else if (r.status === 'izin' || r.status === 'sakit') this.stats.izinSakit++;
+                            else if (r.status === 'alfa') this.stats.alfa++;
+                        });
+                        this.state = 'loaded';
+                        document.title = this.reportInfo + ' - Laporan Absensi';
+                    } catch (e) {
+                        console.error('Error fetching report:', e);
+                        this.state = 'error';
+                        this.errorMsg = 'Gagal memuat laporan. Periksa koneksi internet Anda atau coba lagi nanti.';
+                    }
+                }
+            }
+        }
+    </script>
+</body>
+</html>
